@@ -13,7 +13,7 @@ changing a width keeps everything else consistent.
 """
 
 from typing import Final
-
+Test
 
 # TODO: замените заглушки (0) на корректные значения, см. TASK.md.
 # Все константы, зависящие от ёмкостей *_BITS, должны вычисляться из них.
