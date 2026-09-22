@@ -13,15 +13,15 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-import time  # noqa: F401
+import time
 
-from .constants import (  # noqa: F401
+from .constants import (
     EPOCH_MS_DEFAULT,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
+    NODE_ID_SHIFT,
     SEQUENCE_ID_MAX,
     TIMESTAMP_MS_MAX,
-    NODE_ID_SHIFT,
     TIMESTAMP_SHIFT,
 )
 
