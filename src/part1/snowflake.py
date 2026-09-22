@@ -47,8 +47,10 @@ def generate_snowflake_id(
         )
     elif read_current_millis(epoch_ms) > TIMESTAMP_MS_MAX:
         print("overflows")
-    return (
-        (read_current_millis(epoch_ms) << (NODE_ID_BITS + SEQUENCE_ID_BITS))
-        | (node_id << NODE_ID_BITS)
-        | (sequence_id)
-    )
+    else:
+        return (
+            (read_current_millis(epoch_ms) << (NODE_ID_BITS + SEQUENCE_ID_BITS))
+            | (node_id << NODE_ID_BITS)
+            | (sequence_id)
+        )
+    return None
