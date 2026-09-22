@@ -56,17 +56,18 @@ def generate_snowflake_id(
     node_id: int = NODE_ID_DEFAULT,
     epoch_ms: int = EPOCH_MS_DEFAULT,
 ) -> int | None:
+    time_stamp = read_current_millis(epoch_ms)
     if not (0 <= node_id <= NODE_ID_MAX):
         print("node_id must be in [0, 2**10-1]")
         return None
     elif not (0 <= sequence_id <= SEQUENCE_ID_MAX):
         print("sequence_id must be in [0, 2**12-1]")
         return None
-    elif read_current_millis(epoch_ms) > TIMESTAMP_MS_MAX:
+    elif time_stamp > TIMESTAMP_MS_MAX:
         print("overflows")
         return None
     snowflake_id = (
-        (read_current_millis(epoch_ms) << (NODE_ID_BITS + SEQUENCE_ID_BITS))
+        (time_stamp << (NODE_ID_BITS + SEQUENCE_ID_BITS))
         | (node_id << SEQUENCE_ID_BITS)
         | sequence_id
     )
