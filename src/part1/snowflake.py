@@ -2,8 +2,10 @@ import time
 
 from .constants import (
     EPOCH_MS_DEFAULT,
+    NODE_ID_BITS,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
+    SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
     TIMESTAMP_MS_MAX,
 )
@@ -15,14 +17,14 @@ def read_current_millis(epoch_ms: int) -> int:
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
-    relative_time_ms = snowflake_id >> (NODE_ID_MAX + SEQUENCE_ID_MAX)
+    relative_time_ms = snowflake_id >> (NODE_ID_BITS + SEQUENCE_ID_BITS)
     absolute_time_ms = relative_time_ms + epoch_ms
 
     return absolute_time_ms
 
 
 def decode_node_id(snowflake_id: int) -> int:
-    node_id = (snowflake_id >> SEQUENCE_ID_MAX) & NODE_ID_MAX
+    node_id = (snowflake_id >> SEQUENCE_ID_BITS) & NODE_ID_BITS
     return node_id
 
 
@@ -47,8 +49,8 @@ def generate_snowflake_id(
     else:
         if 0 <= read_current_millis(epoch_ms) <= TIMESTAMP_MS_MAX:
             snowflake_id = (
-                read_current_millis(epoch_ms) << (NODE_ID_MAX + SEQUENCE_ID_MAX)
-                | (node_id << SEQUENCE_ID_MAX)
+                read_current_millis(epoch_ms) << (NODE_ID_BITS + SEQUENCE_ID_BITS)
+                | (node_id << SEQUENCE_ID_BITS)
                 | (sequence_id)
             )
             return snowflake_id
