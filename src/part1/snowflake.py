@@ -39,7 +39,7 @@ def read_current_millis(epoch_ms: int) -> int:
     """
     # TODO: реализуйте функцию
 
-    return int(time.time() - epoch_ms)  # не понятно про какое время
+    return int(time.time() * 1000 - epoch_ms)  # не понятно про какое время
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
@@ -56,7 +56,7 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
     """
     # TODO: реализуйте функцию
 
-    timestamp_ms = (snowflake_id >> 22) & (2 ** (TIMESTAMP_BITS + 1) - 1)
+    timestamp_ms = (snowflake_id >> 22) & (2**TIMESTAMP_BITS - 1)
 
     return int(timestamp_ms + epoch_ms)
 
@@ -73,7 +73,7 @@ def decode_node_id(snowflake_id: int) -> int:
     """
     # TODO: реализуйте функцию
 
-    return int((snowflake_id >> 12) & (2 ** (NODE_ID_BITS + 1) - 1))
+    return int((snowflake_id >> 12) & (2**NODE_ID_BITS - 1))
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -87,7 +87,7 @@ def decode_sequence_id(snowflake_id: int) -> int:
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
     # TODO: реализуйте функцию
-    return int(snowflake_id & (2 ** (SEQUENCE_ID_BITS + 1) - 1))
+    return int(snowflake_id & (2**SEQUENCE_ID_BITS - 1))
 
 
 def generate_snowflake_id(
@@ -120,16 +120,16 @@ def generate_snowflake_id(
     """
     # TODO: реализуйте функцию
 
-    if 0 <= node_id <= NODE_ID_MAX:
+    if node_id < 0 or node_id > NODE_ID_MAX:
         print(f"node_id must be in [{0}; {NODE_ID_MAX}]")
         return None
 
-    if 0 <= sequence_id <= SEQUENCE_ID_MAX:
+    if sequence_id < 0 or sequence_id > SEQUENCE_ID_MAX:
         print(f"sequence_id must be in [{0}; {SEQUENCE_ID_MAX}]")
         return None
 
-    timestamp_ms = int(time.time() - epoch_ms)
-    if epoch_ms > TIMESTAMP_MS_MAX:
+    timestamp_ms = int(time.time() * 1000 - epoch_ms)
+    if timestamp_ms > TIMESTAMP_MS_MAX:
         print("overflows")
         return None
 
