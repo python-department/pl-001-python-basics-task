@@ -29,7 +29,7 @@ from .constants import (
 def read_current_millis(epoch_ms: int) -> int:
 
     user_time = int(time.time() * 1000)
-    
+
     differnse_time = user_time - epoch_ms
 
     return differnse_time
@@ -116,4 +116,3 @@ def generate_snowflake_id(
         | sequence_id
     )
     return snowflake_id
-
