@@ -11,3 +11,6 @@ __pycache__/
 
 # Claude
 .claude
+
+# local repo dumps
+repo_dump*.txt
