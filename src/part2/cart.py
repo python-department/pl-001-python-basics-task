@@ -31,19 +31,19 @@ def add_to_cart(
     product = read_product(storage, product_id)
     if not product:
         return None
-        
+
     if product[QUANTITY_INDEX] < quantity:
         print(
             f"not enough stock for product {product_id}: "
             f"{product[QUANTITY_INDEX]} available, {quantity} requested"
         )
         return None
-    
-    update_product(storage, product_id, (
-            product[NAME_INDEX],
-            product[PRICE_INDEX],
-            product[QUANTITY_INDEX] - quantity
-        ))
+
+    update_product(
+        storage,
+        product_id,
+        (product[NAME_INDEX], product[PRICE_INDEX], product[QUANTITY_INDEX] - quantity),
+    )
 
     existing_line = find_cart_line(cart, product_id)
     if existing_line:
@@ -67,7 +67,7 @@ def remove_from_cart(
     if not cartline:
         print(f"product {product_id} is not in the cart")
         return None
-        
+
     if cartline[LINE_QUANTITY_INDEX] < quantity:
         print(
             f"cart holds only {cartline[LINE_QUANTITY_INDEX]} "
@@ -75,16 +75,16 @@ def remove_from_cart(
             f"cannot remove {quantity}"
         )
         return None
-        
+
     product = read_product(storage, product_id)
     if not product:
         return None
 
-    update_product(storage, product_id, (
-        product[NAME_INDEX],
-        product[PRICE_INDEX],
-        product[QUANTITY_INDEX] + quantity
-    ))
+    update_product(
+        storage,
+        product_id,
+        (product[NAME_INDEX], product[PRICE_INDEX], product[QUANTITY_INDEX] + quantity),
+    )
 
     new_quantity = cartline[LINE_QUANTITY_INDEX] - quantity
     cart.remove(cartline)

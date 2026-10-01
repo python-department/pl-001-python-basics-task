@@ -1,7 +1,7 @@
 from decimal import Decimal
 
-from .storage import ( 
-    NAME_INDEX, 
+from .storage import (
+    NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
@@ -23,16 +23,11 @@ def create_product(
     if product_name in storage_product_names:
         print(f"product name '{product_name}' is already taken")
         return None
-        
+
     product_id = generate_product_id(storage)
     product_price = normalize_price(fields[1])
     product_quantity = fields[2]
-    storage.append((
-        product_id,
-        product_name,
-        product_price,
-        product_quantity
-    ))
+    storage.append((product_id, product_name, product_price, product_quantity))
     return product_id
 
 
@@ -55,7 +50,7 @@ def update_product(
                 product_id,
                 fields[0],
                 normalize_price(fields[1]),
-                fields[2]
+                fields[2],
             )
             storage[i] = updated_product
             return updated_product
