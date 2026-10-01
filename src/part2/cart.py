@@ -45,7 +45,6 @@ def add_to_cart(
             product[QUANTITY_INDEX] - quantity
         ))
 
-    # 2. Обновляем или добавляем строку в корзину
     existing_line = find_cart_line(cart, product_id)
     if existing_line:
         cart.remove(existing_line)
@@ -81,7 +80,6 @@ def remove_from_cart(
     if not product:
         return None
 
-    # 1. Возвращаем товар на склад
     update_product(storage, product_id, (
         product[NAME_INDEX],
         product[PRICE_INDEX],
