@@ -14,16 +14,15 @@ is already taken.
 
 from decimal import Decimal
 
-from storage import (  # noqa: F401
+from storage import (
     NAME_INDEX,
+    PRICE_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
+    QUANTITY_INDEX,
     Product,
-    PRICE_INDEX,
-    QUANTITY_INDEX
-    
 )
-from utils import normalize_price  # noqa: F401
+from utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:

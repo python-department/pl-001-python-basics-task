@@ -12,12 +12,12 @@ an explanatory message to stdout and returns ``None``.
 from typing import Final
 
 from .crud import read_product
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRICE_INDEX,
+    PRODUCT_ID_INDEX,
     QUANTITY_INDEX,
     Product,
-    PRODUCT_ID_INDEX
 )
 
 

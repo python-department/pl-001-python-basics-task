@@ -6,7 +6,7 @@ digits (:data:`PRICE_PRECISION`) that every stored price uses, keeping
 currency values free of binary floating-point error.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 
@@ -26,6 +26,6 @@ def normalize_price(price: Decimal) -> Decimal:
         with halves rounded up.
     """
     ratio = price / PRICE_STEP
-    steps = ratio.quantize(Decimal(1.), rounding=ROUND_HALF_UP)
+    steps = ratio.quantize(Decimal("1."), rounding=ROUND_HALF_UP)
     real_price = steps * PRICE_STEP
     return real_price
