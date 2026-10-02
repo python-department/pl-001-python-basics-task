@@ -24,6 +24,7 @@ def add_to_cart(storage: list[Product], cart: list[CartLine], product_id: int, q
         return None
     new_stock = stock - quantity
     update_product(storage, product_id, (product[NAME_INDEX], product[PRICE_INDEX], new_stock))
+
 def remove_from_cart(storage: list[Product], cart: list[CartLine], product_id: int, quantity: int) -> CartLine | None:
     idx = find_cart_line(cart, product_id)
     if idx is None:
