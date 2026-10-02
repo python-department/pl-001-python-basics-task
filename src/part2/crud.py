@@ -14,15 +14,13 @@ is already taken.
 
 from decimal import Decimal
 
-from storage import (
+from .storage import (
     NAME_INDEX,
-    PRICE_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
-    QUANTITY_INDEX,
     Product,
 )
-from utils import normalize_price
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -113,18 +111,18 @@ def update_product(
         ``None`` when no product carries that identifier (``storage`` is
         left unchanged and a message is printed).
     """
-    real_price = fields[1]
-    norm_price = normalize_price(real_price)
+    norm_price = normalize_price(fields[1])
     for index_old_product, old_product in enumerate(storage):
         if old_product[PRODUCT_ID_INDEX] == product_id:
-            old_product = list(old_product)
-            old_product[NAME_INDEX] = fields[0]
-            old_product[PRICE_INDEX] = norm_price
-            old_product[QUANTITY_INDEX] = fields[2]
-            updation_product = tuple(old_product)
+            updation_product: Product = (
+                old_product[PRODUCT_ID_INDEX],
+                fields[0],
+                norm_price,
+                fields[2],
+            )
             storage[index_old_product] = updation_product
             return updation_product
-    print(f"No product with id {product_id}")
+    print(f"no product with id {product_id}")
     return None
 
 
