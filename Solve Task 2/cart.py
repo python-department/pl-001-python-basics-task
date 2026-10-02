@@ -1,5 +1,5 @@
 from typing import Final
-from crod import (
+from crud import (
     read_product,
     update_product,
 )
