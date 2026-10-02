@@ -27,9 +27,10 @@ type CartLine = tuple[int, int]
 LINE_PRODUCT_ID_INDEX: Final = 0
 LINE_QUANTITY_INDEX: Final = 1
 
-def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine|None:
+
+def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine | None:
     """Return the cart line stored under ``product_id``.
-    
+
     Args:
         cart: The store of cart line.
         product_id: The identifier to look up.
@@ -42,8 +43,8 @@ def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine|None:
     for cart_line in cart:
         if cart_line[LINE_PRODUCT_ID_INDEX] == product_id:
             return cart_line
-    print(f"No cart line with id {product_id}")
     return None
+
 
 def add_to_cart(
     storage: list[Product],
@@ -75,7 +76,9 @@ def add_to_cart(
     if not product:
         return None
     if product[QUANTITY_INDEX] < quantity:
-        print(f"Not enough stock for product {product_id}: {product[QUANTITY_INDEX]} available, {quantity} requested.")
+        print(
+            f"Not enough stock for product {product_id}: {product[QUANTITY_INDEX]} available, {quantity} requested."
+        )
         return None
     dif = product[QUANTITY_INDEX] - quantity
     for index_product, cell in enumerate(storage):
@@ -90,8 +93,12 @@ def add_to_cart(
             for index_line, purchase in enumerate(cart):
                 if purchase[LINE_PRODUCT_ID_INDEX] == product_id:
                     refresh_line = [0, 0]
-                    refresh_line[LINE_PRODUCT_ID_INDEX] = purchase[LINE_PRODUCT_ID_INDEX]
-                    refresh_line[LINE_QUANTITY_INDEX] = purchase[LINE_QUANTITY_INDEX] + quantity
+                    refresh_line[LINE_PRODUCT_ID_INDEX] = purchase[
+                        LINE_PRODUCT_ID_INDEX
+                    ]
+                    refresh_line[LINE_QUANTITY_INDEX] = (
+                        purchase[LINE_QUANTITY_INDEX] + quantity
+                    )
                     purchase = tuple(refresh_line)
                     cart[index_line] = purchase
                     return purchase
@@ -101,10 +108,6 @@ def add_to_cart(
             new_line = tuple(new_line)
             cart.append(new_line)
             return new_line
-
-            
-
-
 
 
 def remove_from_cart(
@@ -137,9 +140,12 @@ def remove_from_cart(
     """
     our_line = find_cart_line(cart, product_id)
     if not our_line:
+        print(f"No cart line with id {product_id}")
         return None
     if our_line[LINE_QUANTITY_INDEX] < quantity:
-        print(f"Cart holds only {our_line[LINE_QUANTITY_INDEX]} unit(s) of product {product_id}, can't remove {quantity}")
+        print(
+            f"Cart holds only {our_line[LINE_QUANTITY_INDEX]} unit(s) of product {product_id}, can't remove {quantity}"
+        )
         return None
     product = read_product(storage, product_id)
     if not product:
@@ -148,7 +154,9 @@ def remove_from_cart(
         if our_line[LINE_PRODUCT_ID_INDEX] == cart_line[LINE_PRODUCT_ID_INDEX]:
             updation_line = [0, 0]
             updation_line[LINE_PRODUCT_ID_INDEX] = our_line[LINE_PRODUCT_ID_INDEX]
-            updation_line[LINE_QUANTITY_INDEX] = our_line[LINE_QUANTITY_INDEX] - quantity
+            updation_line[LINE_QUANTITY_INDEX] = (
+                our_line[LINE_QUANTITY_INDEX] - quantity
+            )
             updation_line = tuple(updation_line)
             for index_product, stored_product in enumerate(storage):
                 if stored_product[PRODUCT_ID_INDEX] == product[PRODUCT_ID_INDEX]:
@@ -156,7 +164,9 @@ def remove_from_cart(
                     refresh_product[PRODUCT_ID_INDEX] = stored_product[PRODUCT_ID_INDEX]
                     refresh_product[NAME_INDEX] = stored_product[NAME_INDEX]
                     refresh_product[PRICE_INDEX] = stored_product[PRICE_INDEX]
-                    refresh_product[QUANTITY_INDEX] = stored_product[QUANTITY_INDEX] + quantity
+                    refresh_product[QUANTITY_INDEX] = (
+                        stored_product[QUANTITY_INDEX] + quantity
+                    )
                     refresh_product = tuple(refresh_product)
                     storage[index_product] = refresh_product
             if updation_line[LINE_QUANTITY_INDEX] == 0:
@@ -164,4 +174,3 @@ def remove_from_cart(
             else:
                 cart[index_cart_line] = updation_line
             return updation_line
-    

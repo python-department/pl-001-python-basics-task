@@ -32,4 +32,3 @@ QUANTITY_INDEX: Final = 3
 
 # TODO: задайте идентификатор первого товара в пустом хранилище
 PRODUCT_ID_MIN: Final[int] = 1
-

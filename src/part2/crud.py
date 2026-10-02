@@ -40,6 +40,8 @@ def generate_product_id(storage: list[Product]) -> int:
         return PRODUCT_ID_MIN
     product_id = max(product[PRODUCT_ID_INDEX] for product in storage) + 1
     return product_id
+
+
 def create_product(
     storage: list[Product], fields: tuple[str, Decimal, int]
 ) -> int | None:
@@ -58,7 +60,7 @@ def create_product(
         ``storage`` is left unchanged and a message naming the clashing
         name is printed.
     """
-    
+
     for product in storage:
         if product[NAME_INDEX] == fields[0]:
             print(f"Product name {product[NAME_INDEX]} is already taken.")
@@ -86,8 +88,6 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
             return product
     print(f"No product with id {product_id}")
     return None
-        
-    
 
 
 def update_product(
@@ -128,7 +128,6 @@ def update_product(
     return None
 
 
-
 def delete_product(storage: list[Product], product_id: int) -> int | None:
     """Remove the product stored under ``product_id`` from ``storage``.
 
@@ -146,7 +145,6 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         if product[PRODUCT_ID_INDEX] == product_id:
             storage.remove(product)
             return product_id
-    
+
     print(f"No product with id {product_id}")
     return None
-    
