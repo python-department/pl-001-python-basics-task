@@ -34,8 +34,8 @@ def generate_product_id(storage: list[Product]) -> int:
         :data:`~src.part2.storage.PRODUCT_ID_MIN` when ``storage`` is
         empty.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if not storage: return PRODUCT_ID_MIN
+    return max(product[PRODUCT_ID_INDEX] for product in storage) + 1
 
 
 def create_product(
@@ -56,8 +56,18 @@ def create_product(
         ``storage`` is left unchanged and a message naming the clashing
         name is printed.
     """
-    # TODO: реализуйте функцию
-    return 0
+    name, price, quantity = fields
+    for product in storage:
+        if product[NAME_INDEX] == name:
+            print(f"product name {name} is already taken")
+            return None
+
+    id_product = generate_product_id(storage)
+    normalized_price = normalize_price(price)
+
+    new_product = (id_product, name, normalized_price, quantity)
+    storage.append(new_product)
+    return id_product
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -72,8 +82,11 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
         ``None`` when no product carries that identifier (a message is
         printed in that case).
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] == product_id:
+            return product
+    print(f"no product with id {product_id}")
+    return None
 
 
 def update_product(
@@ -94,13 +107,21 @@ def update_product(
             ``price`` is a :class:`~decimal.Decimal` amount and is rounded
             to the stored money precision before it is saved.
 
+
     Returns:
         The updated ``(product_id, name, price, quantity)`` record, or
         ``None`` when no product carries that identifier (``storage`` is
         left unchanged and a message is printed).
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    name, price, quantity = fields
+    for i, product in enumerate(storage):
+        if product[PRODUCT_ID_INDEX] == product_id:
+            normalized_price = normalize_price(price)
+            updated_product = (product_id, name, normalized_price, quantity)
+            storage[i] = updated_product
+            return updated_product
+    print(f"no product with id {product_id}")
+    return None
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -116,5 +137,10 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         product carried that identifier (``storage`` is left unchanged and
         a message is printed).
     """
-    # TODO: реализуйте функцию
-    return 0
+
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] == product_id:
+            storage.remove(product)
+            return product_id
+    print(f"no product with id {product_id}")
+    return None
