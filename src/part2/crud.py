@@ -28,7 +28,7 @@ def generate_product_id(storage: list[Product]) -> int:
         return PRODUCT_ID_MIN
     mid = 0
     for i in range(len(storage)):
-        mid = max(mid, storage[i][NAME_INDEX])
+        mid = max(mid, storage[i][PRODUCT_ID_INDEX])
 
     return mid + 1
 
