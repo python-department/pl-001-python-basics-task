@@ -1,12 +1,12 @@
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price  # noqa: F401
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -20,7 +20,7 @@ def generate_product_id(storage: list[Product]) -> int:
 def create_product(
     storage: list[Product], fields: tuple[str, Decimal, int]
 ) -> int | None:
-   
+
     name, price, quantity = fields
 
     for product in storage:
@@ -41,7 +41,7 @@ def create_product(
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
-   
+
     for product in storage:
         if product[PRODUCT_ID_INDEX] == product_id:
             return product
@@ -55,7 +55,7 @@ def update_product(
     product_id: int,
     fields: tuple[str, Decimal, int],
 ) -> Product | None:
-    
+
     for index, product in enumerate(storage):
         if product[PRODUCT_ID_INDEX] == product_id:
             name, price, quantity = fields
@@ -75,7 +75,7 @@ def update_product(
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
-    
+
     for index, product in enumerate(storage):
         if product[PRODUCT_ID_INDEX] == product_id:
             storage.pop(index)

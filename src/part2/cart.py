@@ -1,12 +1,6 @@
 from typing import Final
 
-from .crud import read_product, update_product  # noqa: F401
-from .storage import (  # noqa: F401
-        NAME_INDEX,
-        PRICE_INDEX,
-        QUANTITY_INDEX,
-        Product,
-    )
+from .crud import read_product
 from .storage import (
     NAME_INDEX,
     PRICE_INDEX,
@@ -14,6 +8,7 @@ from .storage import (
     QUANTITY_INDEX,
     Product,
 )
+
 
 type CartLine = tuple[int, int]
 
