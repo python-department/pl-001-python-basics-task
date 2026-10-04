@@ -22,7 +22,7 @@ def generate_snowflake_id(
         print("Timestamp overflows")
         return None
 
-    snowflake_id = (
+    snowflake_id: int = (
         (timestamp_ms << (NODE_ID_BITS + SEQUENCE_ID_BITS))
         | (node_id << SEQUENCE_ID_BITS)
         | sequence_id
