@@ -30,58 +30,36 @@ from .utils import normalize_price, normalize_product_name  # noqa: F401
 
 
 def generate_product_id(storage: list[Product]) -> int:
-    """Choose the identifier for the next product added to ``storage``.
-
-    Args:
-        storage: The product store to inspect.
-
-    Returns:
-        One past the greatest identifier currently held in ``storage``, or
-        :data:`~src.part3.storage.PRODUCT_ID_MIN` when ``storage`` is
-        empty.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return 0
+    if not storage:
+            return PRODUCT_ID_MIN
+    
+    max_storage = max(product[PRODUCT_ID_INDEX] for product in storage) + 1
+    return max_storage
 
 
 def create_product(
     storage: list[Product], fields: tuple[str, Decimal, int]
 ) -> int | None:
-    """Append a new product to ``storage`` and return its new identifier.
+    name, price, quantity = fields
+    for item in storage:
+        if name == item[NAME_INDEX]:
+            print(f"product name '{name}' is already taken")
+            return None
 
-    Args:
-        storage: The product store to append to; modified in place on
-            success.
-        fields: A ``(name, price, quantity)`` tuple describing the product.
-            ``name`` is normalised (surrounding whitespace stripped,
-            lower-cased) before it is stored or compared. ``price`` is a
-            :class:`~decimal.Decimal` amount and is rounded to the stored
-            money precision before it is saved.
-
-    Returns:
-        The identifier generated for the new product, or ``None`` when
-        ``name`` is blank once normalised or a product with the same
-        normalised name already exists. In the ``None`` case ``storage``
-        is left unchanged and an explanatory message is printed.
-    """
-    # TODO: реализуйте функцию
-    return 0
+    new_id = generate_product_id(storage)
+    new_price = normalize_price(price)
+    new_product = (new_id, name, new_price, quantity)
+    storage.append(new_product)
+    return new_id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
-    """Return the product stored under ``product_id``.
+    for i in range(len(storage)):
+        if storage[i][PRODUCT_ID_INDEX] == product_id:
+            return storage[i]
 
-    Args:
-        storage: The product store to search.
-        product_id: The identifier to look up.
-
-    Returns:
-        The matching ``(product_id, name, price, quantity)`` record, or
-        ``None`` when no product carries that identifier (a message is
-        printed in that case).
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return (0, "", Decimal(0), 0)
+    print(f"no product with id '{product_id}'")
+    return None
 
 
 def update_product(
