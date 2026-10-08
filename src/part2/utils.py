@@ -1,4 +1,4 @@
-"""Standalone helpers shared by the hw4 storage and CRUD modules.
+"""Standalone helpers shared by the part2 storage and CRUD modules.
 
 For now this is limited to money handling: :func:`normalize_price` rounds a
 raw :class:`~decimal.Decimal` amount to the fixed number of fractional
