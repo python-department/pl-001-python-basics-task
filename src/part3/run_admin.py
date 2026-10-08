@@ -29,67 +29,91 @@ store is left untouched and the loop keeps running; only ``exit`` stops
 it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
 from .storage import Product
-from .utils import get_storage_str_representation  # noqa: F401
+from .utils import (
+    get_storage_str_representation,
+    normalize_price,
+    normalize_product_name,
+)
 
 
 # TODO: задайте приглашение и текст справки
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
-    """Print the command reference to stdout.
-
-    The text is the module-level :data:`HELP_TEXT` constant, printed as
-    is: a heading, one line per command with a short description, and a
-    note on how multi-word names are parsed.
-    """
-    # TODO: реализуйте функцию
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
-    """Print a CRUD result to stdout unless it is ``None``.
-
-    Args:
-        result: The value returned by a CRUD operation. ``None`` means the
-            operation already reported its own failure, so nothing is
-            printed in that case.
-    """
-    # TODO: реализуйте функцию
+    if result is not None:
+        print(result)
 
 
 def run_command(storage: list[Product], line: str) -> bool:
-    """Parse one console line and carry out the command it names.
-
-    Args:
-        storage: The product store shared across the session; mutated in
-            place by the ``create``, ``update`` and ``delete`` commands.
-        line: One line of console input, already stripped of surrounding
-            whitespace.
-
-    Returns:
-        ``True`` to keep the read-eval-print loop running, or ``False``
-        once the ``exit`` command has been seen. A line that is not a
-        known command prints a notice and still returns ``True``.
-
-    Raises:
-        ValueError: If an id or quantity argument of a CRUD command does
-            not parse as a base-10 integer.
-        decimal.InvalidOperation: If the price argument of ``create`` or
-            ``update`` does not parse as a decimal number.
-    """
-    # TODO: реализуйте функцию
-    return False
+    match line.split():
+        case ["help"]:
+            show_help()
+            return True
+        case ["exit"]:
+            return False
+        case ["show"]:
+            print(get_storage_str_representation(storage))
+            return True
+        case ["create", *command]:
+            if len(command) < 3:
+                print(f"'{line}' is not a command")
+                return True
+            quantity = int(command[-1])
+            price = normalize_price(Decimal(command[-2]))
+            name = normalize_product_name(" ".join(command[:-2]))
+            fields = (name, price, quantity)
+            print_result(create_product(storage, fields))
+            return True
+        case ["read", id]:
+            find_id = int(id)
+            print_result(read_product(storage, find_id))
+            return True
+        case ["update", id, *command]:
+            if len(command) < 3:
+                print(f"'{line}' is not a command")
+                return True
+            find_id = int(id)
+            quantity = int(command[-1])
+            price = normalize_price(Decimal(command[-2]))
+            name = normalize_product_name(" ".join(command[:-2]))
+            fields = (name, price, quantity)
+            print_result(update_product(storage, find_id, fields))
+            return True
+        case ["delete", id]:
+            find_id = int(id)
+            answer = delete_product(storage, find_id)
+            print_result(answer)
+            return True
+        case _:
+            print(f"'{line}' is not a command")
+            return True
 
 
 def main() -> None:
