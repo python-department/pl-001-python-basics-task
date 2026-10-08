@@ -42,7 +42,6 @@ from .storage import Product
 from .utils import get_storage_str_representation
 
 
-# TODO: задайте приглашение и текст справки
 PROMPT: Final[str] = "admin> "
 HELP_TEXT: Final[str] = """Available commands:
   help                                       show this message
@@ -124,7 +123,9 @@ def run_command(storage: list[Product], line: str) -> bool:
             name = " ".join(words[1:-2])
             price = Decimal(words[-2])
             quantity = int(words[-1])
-            result = create_product(storage, (name, price, quantity))
+            result: int | Product | None = create_product(
+                storage, (name, price, quantity)
+            )
             print_result(result)
             return True
 

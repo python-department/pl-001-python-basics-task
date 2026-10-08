@@ -67,7 +67,6 @@ def create_product(
         normalised name already exists. In the ``None`` case ``storage``
         is left unchanged and an explanatory message is printed.
     """
-    # TODO: реализуйте функцию
     raw_name, price, quantity = fields
     name = normalize_product_name(raw_name)
 
