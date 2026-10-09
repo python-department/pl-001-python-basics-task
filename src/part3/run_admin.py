@@ -83,13 +83,13 @@ def run_command(storage: list[Product], line: str) -> bool:
         case ["delete", product_id]:
             print_result(delete_product(storage, int(product_id)))
 
-        case ["create", *name_parts, price, quantity]:
+        case ["create", *name_parts, price, quantity] if name_parts:
             name = " ".join(name_parts)
             price_decimal = Decimal(price)
             quantity_int = int(quantity)
             print_result(create_product(storage, (name, price_decimal, quantity_int)))
 
-        case ["update", product_id, *name_parts, price, quantity]:
+        case ["update", product_id, *name_parts, price, quantity] if name_parts:
             product_id_int = int(product_id)
             name = " ".join(name_parts)
             price_decimal = Decimal(price)
