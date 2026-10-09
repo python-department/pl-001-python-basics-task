@@ -13,13 +13,16 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-import time  # noqa: F401
+import time
 
-from .constants import (  # noqa: F401
+from .constants import (
     EPOCH_MS_DEFAULT,
+    NODE_ID_BITS,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
+    SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
+    TIMESTAMP_BITS,
     TIMESTAMP_MS_MAX,
 )
 
@@ -34,8 +37,7 @@ def read_current_millis(epoch_ms: int) -> int:
         The count of whole milliseconds between ``epoch_ms`` and now. May be
         negative if ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию
-    return 0
+    return time.time_ns() // 10**6 - epoch_ms
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
@@ -50,8 +52,9 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
         The absolute Unix time in milliseconds at which the identifier was
         generated.
     """
-    # TODO: реализуйте функцию
-    return 0
+    del_time = (snowflake_id >> (NODE_ID_BITS + TIMESTAMP_BITS)) & TIMESTAMP_MS_MAX
+
+    return epoch_ms + del_time
 
 
 def decode_node_id(snowflake_id: int) -> int:
@@ -64,8 +67,8 @@ def decode_node_id(snowflake_id: int) -> int:
         The node identifier packed into ``snowflake_id``, in the range
         ``[0, NODE_ID_MAX]``.
     """
-    # TODO: реализуйте функцию
-    return 0
+
+    return (snowflake_id >> SEQUENCE_ID_BITS) & NODE_ID_MAX
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -78,8 +81,7 @@ def decode_sequence_id(snowflake_id: int) -> int:
         The per-millisecond sequence counter packed into ``snowflake_id``, in
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
-    # TODO: реализуйте функцию
-    return 0
+    return snowflake_id & SEQUENCE_ID_MAX
 
 
 def generate_snowflake_id(
@@ -87,28 +89,20 @@ def generate_snowflake_id(
     node_id: int = NODE_ID_DEFAULT,
     epoch_ms: int = EPOCH_MS_DEFAULT,
 ) -> int | None:
-    """Build and return a Snowflake identifier for the current millisecond.
+    if not (0 <= node_id <= NODE_ID_MAX):
+        print(f"node_id must be in [0, {NODE_ID_MAX}]. Your id {node_id}")
+        return None
+    elif not (0 <= sequence_id <= SEQUENCE_ID_MAX):
+        print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}] Your id {sequence_id}")
+        return None
 
-    The function is stateless: the caller passes the per-millisecond sequence
-    counter explicitly. It is the caller's responsibility to increment
-    ``sequence_id`` for identifiers minted within the same millisecond and to
-    reset it once the clock advances.
-
-    Args:
-        sequence_id: The per-millisecond sequence counter, in the range
-            ``[0, SEQUENCE_ID_MAX]``.
-        node_id: The identifier of this node, in the range ``[0, NODE_ID_MAX]``.
-            Optional; defaults to ``NODE_ID_DEFAULT``.
-        epoch_ms: The start of the epoch as Unix milliseconds. Optional;
-            defaults to the original Twitter epoch (2010-11-04 01:42:54.657
-            UTC).
-
-    Returns:
-        The Snowflake identifier as a positive 63-bit integer, or ``None`` if
-        ``node_id`` is outside ``[0, NODE_ID_MAX]``, ``sequence_id`` is outside
-        ``[0, SEQUENCE_ID_MAX]``, or the elapsed time no longer fits in the
-        timestamp field (roughly 69 years after ``epoch_ms``). In each of those
-        cases an explanatory message is printed to stdout first.
-    """
-    # TODO: реализуйте функцию
-    return 0
+    else:
+        if 0 <= epoch_ms <= TIMESTAMP_MS_MAX:
+            return (
+                epoch_ms
+                << (SEQUENCE_ID_BITS + NODE_ID_BITS) + node_id
+                << SEQUENCE_ID_BITS + sequence_id
+            )
+        else:
+            print("overflows")
+            return None
