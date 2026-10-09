@@ -18,7 +18,7 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .storage import Product
@@ -28,14 +28,14 @@ from .storage import Product
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final[Decimal] = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -48,8 +48,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -66,8 +65,10 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию
-    return ""
+    list_of_words = name.split()
+    name = " ".join(list_of_words)
+    name = name.lower()
+    return name
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -91,5 +92,24 @@ def get_storage_str_representation(storage: list[Product]) -> str:
         is empty only the header and separator rows are returned, sized to
         the header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    mxlen1 = len(TABLE_HEADERS[0])
+    mxlen2 = len(TABLE_HEADERS[1])
+    mxlen3 = len(TABLE_HEADERS[2])
+    mxlen4 = len(TABLE_HEADERS[3])
+    for product in storage:
+        item_id = str(product[0])
+        name = str(product[1])
+        price = str(product[2])
+        quantity = str(product[3])
+        mxlen1 = max(mxlen1, len(item_id))
+        mxlen2 = max(mxlen2, len(name))
+        mxlen3 = max(mxlen3, len(price))
+        mxlen4 = max(mxlen4, len(quantity))
+    s1 = f"| {TABLE_HEADERS[0].ljust(mxlen1)} | {TABLE_HEADERS[1].ljust(mxlen2)} | {TABLE_HEADERS[2].ljust(mxlen3)} | {TABLE_HEADERS[3].ljust(mxlen4)} |"
+    s2 = f"|{'-' * (mxlen1 + 2)}|{'-' * (mxlen2 + 2)}|{'-' * (mxlen3 + 2)}|{'-' * (mxlen4 + 2)}|"
+    snext = [
+        f"| {str(product[0]).ljust(mxlen1)} | {str(product[1]).ljust(mxlen2)} | {str(product[2]).ljust(mxlen3)} | {str(product[3]).ljust(mxlen4)} |"
+        for product in storage
+    ]
+    rows = [s1, s2, *snext]
+    return "\n".join(rows)
