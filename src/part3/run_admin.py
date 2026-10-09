@@ -65,7 +65,7 @@ def show_help() -> None:
 def print_result(result: object) -> None:
     if result is not None:
         print(result)
-        return None
+        return
 
 
 def run_command(storage: list[Product], line: str) -> bool:
@@ -75,14 +75,14 @@ def run_command(storage: list[Product], line: str) -> bool:
             return True
 
         case ["create", *name, price, quantity] if name:
-            name = " ".join(name)
-            fields_case = (name, Decimal(price), int(quantity))
+            name_str = " ".join(name)
+            fields_case = (name_str, Decimal(price), int(quantity))
             print_result(create_product(storage, fields_case))
             return True
 
         case ["update", prod_id, *name, price, quantity] if name:
-            name = " ".join(name)
-            fields_case = (name, Decimal(price), int(quantity))
+            name_str = " ".join(name)
+            fields_case = (name_str, Decimal(price), int(quantity))
             print_result(update_product(storage, int(prod_id), fields_case))
             return True
 

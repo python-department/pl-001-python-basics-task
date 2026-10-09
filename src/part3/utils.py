@@ -18,12 +18,13 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
+
 from .storage import (
-    PRODUCT_ID_INDEX,
     NAME_INDEX,
     PRICE_INDEX,
+    PRODUCT_ID_INDEX,
     QUANTITY_INDEX,
     Product,
 )
@@ -43,7 +44,7 @@ def normalize_price(price: Decimal) -> Decimal:
 
 
 def normalize_product_name(name: str) -> str:
-    new_name = " ".join(name.split()).lower
+    new_name = " ".join(name.split()).lower()
 
     return new_name
 
