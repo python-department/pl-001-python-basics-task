@@ -1,18 +1,7 @@
-"""Shopping-cart operations layered on top of the product store.
-
-The cart is a plain list of tuples, one :data:`CartLine` --
-``(product_id, quantity)`` -- per distinct product. Moving units between the
-store and the cart keeps the two sides in balance: :func:`add_to_cart` takes
-units out of stock, :func:`remove_from_cart` puts them back.
-
-Like the CRUD layer, the failure path never raises -- the operation prints
-an explanatory message to stdout and returns ``None``.
-"""
-
 from typing import Final
 
-from .crud import read_product, update_product  # noqa: F401
-from .storage import (  # noqa: F401
+from .crud import read_product, update_product
+from .storage import (
     NAME_INDEX,
     PRICE_INDEX,
     QUANTITY_INDEX,
@@ -22,9 +11,34 @@ from .storage import (  # noqa: F401
 
 type CartLine = tuple[int, int]
 
-# TODO: задайте позиции полей внутри кортежа CartLine
+
 LINE_PRODUCT_ID_INDEX: Final = 0
-LINE_QUANTITY_INDEX: Final = 0
+LINE_QUANTITY_INDEX: Final = 1
+
+
+def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine | None:
+    for c_prod in cart:
+        if c_prod[LINE_PRODUCT_ID_INDEX] == product_id:
+            return c_prod
+    print(f"no product with id {product_id} in the cart")
+    return None
+
+
+def change_cart_quantity(
+    cart: list[CartLine],
+    product_id: int,
+    quantity: int,
+) -> int | None:
+    for ind in range(len(cart)):
+        if cart[ind][LINE_PRODUCT_ID_INDEX] == product_id:
+            new_c_prod: CartLine = (
+                product_id,
+                cart[ind][LINE_QUANTITY_INDEX] - quantity,
+            )
+            cart[ind] = new_c_prod
+            return ind
+    print(f"no product with id {product_id} in cart")
+    return None
 
 
 def add_to_cart(
@@ -33,28 +47,25 @@ def add_to_cart(
     product_id: int,
     quantity: int,
 ) -> CartLine | None:
-    """Move ``quantity`` units of ``product_id`` from the store into ``cart``.
-
-    The product is looked up in ``storage``. If it is missing, a message is
-    printed (by :func:`~src.part2.crud.read_product`) and nothing
-    changes. If the store holds fewer units than requested, an explanatory
-    message is printed and nothing changes. Otherwise the store record is
-    decremented by ``quantity`` and the cart line for ``product_id`` gains
-    ``quantity`` units -- a new line is created when the cart had none.
-
-    Args:
-        storage: The product store to draw stock from; modified in place on
-            success.
-        cart: The cart to add the units to; modified in place on success.
-        product_id: The identifier of the product to add.
-        quantity: Number of units to move into the cart.
-
-    Returns:
-        The cart line for ``product_id`` after the addition, or ``None``
-        when the product is unknown or the store cannot cover the request.
-    """
-    # TODO: реализуйте функцию
-    return (0, 0)
+    prod = read_product(storage, product_id)
+    if prod is None:
+        return None
+    if prod[QUANTITY_INDEX] < quantity:
+        print(
+            f"not enough stock for product {product_id}: {prod[QUANTITY_INDEX]} available, {quantity} requested"
+        )
+        return None
+    update_product(
+        storage,
+        product_id,
+        (prod[NAME_INDEX], prod[PRICE_INDEX], prod[QUANTITY_INDEX] - quantity),
+    )
+    for ind in range(len(cart)):
+        if cart[ind][LINE_PRODUCT_ID_INDEX] == product_id:
+            cart[ind] = (product_id, cart[ind][LINE_QUANTITY_INDEX] + quantity)
+            return cart[ind]
+    cart.append((product_id, quantity))
+    return cart[-1]
 
 
 def remove_from_cart(
@@ -63,27 +74,27 @@ def remove_from_cart(
     product_id: int,
     quantity: int,
 ) -> CartLine | None:
-    """Move ``quantity`` units of ``product_id`` from ``cart`` back to the store.
-
-    The cart line for ``product_id`` is looked up. If there is none, a
-    message is printed and nothing changes. If the line holds fewer units
-    than requested, an explanatory message is printed and nothing changes.
-    Otherwise the cart line loses ``quantity`` units -- the line is dropped
-    when it reaches zero -- and the store record gains ``quantity`` units
-    back.
-
-    Args:
-        storage: The product store to return stock to; modified in place on
-            success.
-        cart: The cart to take the units from; modified in place on
-            success.
-        product_id: The identifier of the product to remove.
-        quantity: Number of units to move back into the store.
-
-    Returns:
-        The cart line for ``product_id`` after the removal (a quantity of
-        zero means the line was dropped), or ``None`` when the cart has no
-        line for the product or holds too few units.
-    """
-    # TODO: реализуйте функцию
-    return (0, 0)
+    c_prod = find_cart_line(cart, product_id)
+    if c_prod is None:
+        return None
+    if c_prod[LINE_QUANTITY_INDEX] < quantity:
+        print(
+            f"cart holds only {c_prod[LINE_QUANTITY_INDEX]} unit(s) of product {product_id}, cannot remove {quantity}"
+        )
+        return None
+    prod = read_product(storage, product_id)
+    if prod is None:
+        return None
+    update_product(
+        storage,
+        product_id,
+        (prod[NAME_INDEX], prod[PRICE_INDEX], prod[QUANTITY_INDEX] + quantity),
+    )
+    ind = change_cart_quantity(cart, product_id, quantity)
+    if ind is None:
+        return None
+    if cart[ind][LINE_QUANTITY_INDEX] == 0:
+        res = cart[ind]
+        del cart[ind]
+        return res
+    return cart[ind]
