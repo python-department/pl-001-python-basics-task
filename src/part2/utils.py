@@ -1,4 +1,4 @@
-# Standalone helpers shared by the hw4 storage and CRUD modules.
+"""Standalone helpers shared by the hw4 storage and CRUD modules.
 
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
