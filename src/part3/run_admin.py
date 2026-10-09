@@ -29,22 +29,33 @@ store is left untouched and the loop keeps running; only ``exit`` stops
 it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
 from .storage import Product
-from .utils import get_storage_str_representation  # noqa: F401
+from .utils import get_storage_str_representation
 
 
 # TODO: задайте приглашение и текст справки
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
@@ -55,6 +66,7 @@ def show_help() -> None:
     note on how multi-word names are parsed.
     """
     # TODO: реализуйте функцию
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
@@ -66,6 +78,8 @@ def print_result(result: object) -> None:
             printed in that case.
     """
     # TODO: реализуйте функцию
+    if result is not None:
+        print(result)
 
 
 def run_command(storage: list[Product], line: str) -> bool:
@@ -89,7 +103,49 @@ def run_command(storage: list[Product], line: str) -> bool:
             ``update`` does not parse as a decimal number.
     """
     # TODO: реализуйте функцию
-    return False
+
+    if line == "exit":
+        return False
+    if line == "help":
+        show_help()
+        return True
+    if line == "show":
+        print(get_storage_str_representation(storage))
+        return True
+
+    words = line.split()
+
+    if len(words) >= 4 and words[0] == "create":
+        name = " ".join(words[1:-2])
+        price = Decimal(words[-2])
+        quantity = int(words[-1])
+        result: object = create_product(storage, (name, price, quantity))
+        print_result(result)
+        return True
+
+    if len(words) == 2 and words[0] == "read":
+        product_id = int(words[1])
+        result = read_product(storage, product_id)
+        print_result(result)
+        return True
+
+    if len(words) >= 5 and words[0] == "update":
+        product_id = int(words[1])
+        name = " ".join(words[2:-2])
+        price = Decimal(words[-2])
+        quantity = int(words[-1])
+        result = update_product(storage, product_id, (name, price, quantity))
+        print_result(result)
+        return True
+
+    if len(words) == 2 and words[0] == "delete":
+        product_id = int(words[1])
+        result = delete_product(storage, product_id)
+        print_result(result)
+        return True
+
+    print(f"{line!s} is not a command")
+    return True
 
 
 def main() -> None:
