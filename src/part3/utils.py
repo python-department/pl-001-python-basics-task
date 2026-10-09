@@ -20,76 +20,56 @@ Presentation:
 
 from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
 from typing import Final
+from .storage import (
+    PRODUCT_ID_INDEX,
+    NAME_INDEX,
+    PRICE_INDEX,
+    QUANTITY_INDEX,
+    Product,
+)
 
-from .storage import Product
+
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
-
-# Column headers of the table produced by get_storage_str_representation,
-# left to right. The width of each column is not fixed here -- it is
-# measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
+    true_price = price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return true_price
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
+    new_name = " ".join(name.split()).lower
 
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию
-    return ""
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+    return new_name
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    mx_len_id = len(TABLE_HEADERS[0]) + 2
+    mx_len_name = len(TABLE_HEADERS[1]) + 2
+    mx_len_price = len(TABLE_HEADERS[2]) + 2
+    mx_len_quantity = len(TABLE_HEADERS[3]) + 2
+    for item in storage:
+        mx_len_id = max(mx_len_id, len(str(item[PRODUCT_ID_INDEX])) + 2)
+        mx_len_name = max(mx_len_name, len(item[NAME_INDEX]) + 2)
+        mx_len_price = max(mx_len_price, len(str(item[PRICE_INDEX])) + 2)
+        mx_len_quantity = max(mx_len_quantity, len(str(item[QUANTITY_INDEX])) + 2)
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    s = (
+        f"| {TABLE_HEADERS[0]}{' ' * (mx_len_id - 3)}| {TABLE_HEADERS[1]}{' ' * (mx_len_name - 5)}| {TABLE_HEADERS[2]}{' ' * (mx_len_price - 6)}| {TABLE_HEADERS[3]}{' ' * (mx_len_quantity - 9)}|\n"
+        f"|{'-' * mx_len_id}|{'-' * mx_len_name}|{'-' * mx_len_price}|{'-' * mx_len_quantity}|"
+    )
 
-    Args:
-        storage: The product store to render.
-
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage`` in list order. When ``storage``
-        is empty only the header and separator rows are returned, sized to
-        the header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    for item in storage:
+        s_new = (
+            f"\n| {item[PRODUCT_ID_INDEX]}{' ' * (mx_len_id - len(str(item[PRODUCT_ID_INDEX])) - 1)}"
+            f"| {item[NAME_INDEX]}{' ' * (mx_len_name - len(str(item[NAME_INDEX])) - 1)}"
+            f"| {item[PRICE_INDEX]}{' ' * (mx_len_price - len(str(item[PRICE_INDEX])) - 1)}"
+            f"| {item[QUANTITY_INDEX]}{' ' * (mx_len_quantity - len(str(item[QUANTITY_INDEX])) - 1)}|"
+        )
+        s += s_new
+    return s

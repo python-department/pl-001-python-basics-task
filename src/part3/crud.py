@@ -31,8 +31,8 @@ from .utils import normalize_price, normalize_product_name  # noqa: F401
 
 def generate_product_id(storage: list[Product]) -> int:
     if not storage:
-            return PRODUCT_ID_MIN
-    
+        return PRODUCT_ID_MIN
+
     max_storage = max(product[PRODUCT_ID_INDEX] for product in storage) + 1
     return max_storage
 
