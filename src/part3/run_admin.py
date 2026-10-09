@@ -24,7 +24,7 @@ HELP_TEXT: Final[str] = (
     "  delete <id>                                remove the product with that id\n\n"
     "For create and update the price and quantity are the last two words of the\n"
     "line; everything before them is the product name, so it may contain spaces\n"
-    "(for example \"Gibson SG Junior\") and needs no quoting."
+    '(for example "Gibson SG Junior") and needs no quoting.'
 )
 
 

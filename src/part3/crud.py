@@ -7,8 +7,6 @@ from .storage import (
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
-    PRICE_INDEX,
-    QUANTITY_INDEX,
 )
 from .utils import normalize_price, normalize_product_name
 
