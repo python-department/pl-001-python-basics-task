@@ -1,19 +1,19 @@
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
 from .storage import Product
-from .utils import get_storage_str_representation  # noqa: F401
+from .utils import get_storage_str_representation
 
 
 # TODO: задайте приглашение и текст справки
 PROMPT: Final[str] = "admin> "
-HELP_TEXT: Final[str] =  '''
+HELP_TEXT: Final[str] = """
   Available commands:
     help                                       show this message
     exit                                       leave the console
@@ -26,7 +26,7 @@ HELP_TEXT: Final[str] =  '''
   For create and update the price and quantity are the last two words of the
   line; everything before them is the product name, so it may contain spaces
   (for example "Gibson SG Junior") and needs no quoting.
-  '''
+  """
 
 
 def show_help() -> None:
@@ -47,12 +47,12 @@ def run_command(storage: list[Product], line: str) -> bool:
         case ["show"]:
             print(get_storage_str_representation(storage))
         case ["create", *name, price, quantity]:
-            fields = (' '.join(name), Decimal(price), int(quantity))
+            fields = (" ".join(name), Decimal(price), int(quantity))
             print_result(create_product(storage, fields))
         case ["read", product_id]:
             print_result(read_product(storage, int(product_id)))
         case ["update", product_id, *name, price, quantity]:
-            fields = (' '.join(name), Decimal(price), int(quantity))
+            fields = (" ".join(name), Decimal(price), int(quantity))
             print_result(update_product(storage, int(product_id), fields))
         case ["delete", product_id]:
             print_result(delete_product(storage, int(product_id)))

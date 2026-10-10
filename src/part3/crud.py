@@ -1,15 +1,7 @@
 from decimal import Decimal
 
-from .storage import (
-    NAME_INDEX,
-    PRODUCT_ID_INDEX,
-    PRODUCT_ID_MIN,
-    Product
-)
-from .utils import (
-    normalize_price,
-    normalize_product_name
-)
+from .storage import NAME_INDEX, PRODUCT_ID_INDEX, PRODUCT_ID_MIN, Product
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -23,7 +15,7 @@ def create_product(
 ) -> int | None:
     product_name = normalize_product_name(fields[0])
     if not product_name:
-        print('product name must not be blank')
+        print("product name must not be blank")
         return None
     storage_product_names = [product[NAME_INDEX] for product in storage]
     if product_name in storage_product_names:
@@ -33,12 +25,7 @@ def create_product(
     product_id = generate_product_id(storage)
     product_price = normalize_price(fields[1])
     product_quantity = fields[2]
-    storage.append((
-        product_id,
-        product_name,
-        product_price,
-        product_quantity
-    ))
+    storage.append((product_id, product_name, product_price, product_quantity))
     return product_id
 
 
@@ -57,9 +44,9 @@ def update_product(
 ) -> Product | None:
     product_name = normalize_product_name(fields[0])
     if not product_name:
-        print('product name must not be blank')
+        print("product name must not be blank")
         return None
-    
+
     product_index = -1
     is_name_taken = False
     for i, product in enumerate(storage):
@@ -71,11 +58,11 @@ def update_product(
     if product_index < 0:
         print(f"no product with id {product_id}")
         return None
-    
+
     if is_name_taken:
         print(f"product name '{product_name}' is already taken")
         return None
-    
+
     updated_product = (
         product_id,
         product_name,
@@ -93,12 +80,3 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
             return product_id
     print(f"no product with id {product_id}")
     return None
-
-storage: list[Product] = [
-    (1, "cordless drill", Decimal("90.00"), 12),
-    (2, "claw hammer", Decimal("9.90"), 40),
-]
-
-result = update_product(storage, 1, ("CORDLESS  Drill", Decimal("85"), 10))
-
-print(result)   # (1, 'cordless drill', Decimal('85.00'), 10)
