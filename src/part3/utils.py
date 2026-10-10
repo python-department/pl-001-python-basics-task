@@ -18,78 +18,66 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .storage import Product
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию
-    return ""
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+    return " ".join(name.split()).lower()
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    column_width = [len(header) for header in TABLE_HEADERS]
+    for product in storage:
+        column_width[0] = max(column_width[0], len(str(product[0])))
+        column_width[1] = max(column_width[1], len(str(product[1])))
+        column_width[2] = max(column_width[2], len(str(product[2])))
+        column_width[3] = max(column_width[3], len(str(product[3])))
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    id, name, price, quantity = TABLE_HEADERS
+    header_row_mas = [
+        f" {id.ljust(column_width[0])} ",
+        f" {name.ljust(column_width[1])} ",
+        f" {price.ljust(column_width[2])} ",
+        f" {quantity.ljust(column_width[3])} ",
+    ]
+    header_row = f"|{'|'.join(header_row_mas)}|"
 
-    Args:
-        storage: The product store to render.
+    delimiter_row_mas = [
+        "".ljust(column_width[0] + 2, "-"),
+        "".ljust(column_width[1] + 2, "-"),
+        "".ljust(column_width[2] + 2, "-"),
+        "".ljust(column_width[3] + 2, "-"),
+    ]
+    delimiter_row = f"|{'|'.join(delimiter_row_mas)}|"
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage`` in list order. When ``storage``
-        is empty only the header and separator rows are returned, sized to
-        the header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    table_rows = [header_row, delimiter_row]
+    for product in storage:
+        id, name, price, quantity = map(str, product)
+        row_mas = [
+            f" {id.ljust(column_width[0])} ",
+            f" {name.ljust(column_width[1])} ",
+            f" {price.ljust(column_width[2])} ",
+            f" {quantity.ljust(column_width[3])} ",
+        ]
+        row = f"|{'|'.join(row_mas)}|"
+        table_rows.append(row)
+    return "\n".join(table_rows)
+
+
+storage: list[tuple[int, str, Decimal, int]] = []
