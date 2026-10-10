@@ -1,5 +1,4 @@
 from decimal import Decimal
-
 from storage import ( 
     NAME_INDEX,
     PRODUCT_ID_INDEX,
