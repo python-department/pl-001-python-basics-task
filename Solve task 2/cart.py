@@ -60,7 +60,7 @@ def remove_from_cart(
     if prod is None:
         return None
     storage[storage.index(prod)] = update_product(storage, product_id, (prod[NAME_INDEX], prod[PRICE_INDEX], prod[QUANTITY_INDEX] + quantity))
-    if prod_cart[LINE_QUANTITY_INDEX] - quantity is 0:
+    if (prod_cart[LINE_QUANTITY_INDEX] - quantity) == 0:
         cart.remove(prod_cart)
         return 0
     
