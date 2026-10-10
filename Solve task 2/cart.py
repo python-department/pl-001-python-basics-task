@@ -63,6 +63,5 @@ def remove_from_cart(
     if (prod_cart[LINE_QUANTITY_INDEX] - quantity) == 0:
         cart.remove(prod_cart)
         return 0
-    
     cart [cart.index(prod_cart)] = CartLine(product_id, prod_cart[LINE_QUANTITY_INDEX] - quantity)
     return cart [cart.index(prod_cart)]
