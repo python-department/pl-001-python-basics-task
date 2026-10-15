@@ -20,13 +20,13 @@ product.
 
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price, normalize_product_name  # noqa: F401
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -37,11 +37,17 @@ def generate_product_id(storage: list[Product]) -> int:
 
     Returns:
         One past the greatest identifier currently held in ``storage``, or
-        :data:`~src.part3.storage.PRODUCT_ID_MIN` when ``storage`` is
+        :data:`~src.part2.storage.PRODUCT_ID_MIN` when ``storage`` is
         empty.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return 0
+    if not storage:
+        return PRODUCT_ID_MIN
+
+    max_id = 0
+    for product in storage:
+        current_id = int(product[PRODUCT_ID_INDEX])
+        max_id = max(current_id, max_id)
+    return max_id + 1
 
 
 def create_product(
@@ -64,8 +70,20 @@ def create_product(
         normalised name already exists. In the ``None`` case ``storage``
         is left unchanged and an explanatory message is printed.
     """
-    # TODO: реализуйте функцию
-    return 0
+    name, price, quantity = fields
+    name = normalize_product_name(name)
+    if not name:
+        print("product name must not be blank")
+        return None
+    for product in storage:
+        if product[NAME_INDEX] == name:
+            print(f"product name '{name}' is already taken")
+            return None
+
+    new_id = generate_product_id(storage)
+    normalized_price = normalize_price(price)
+    storage.append((new_id, name, normalized_price, quantity))
+    return new_id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -73,15 +91,17 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
 
     Args:
         storage: The product store to search.
-        product_id: The identifier to look up.
 
     Returns:
         The matching ``(product_id, name, price, quantity)`` record, or
         ``None`` when no product carries that identifier (a message is
         printed in that case).
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return (0, "", Decimal(0), 0)
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] == product_id:
+            return product
+    print(f"no product with id {product_id}")
+    return None
 
 
 def update_product(
@@ -110,8 +130,29 @@ def update_product(
         unchanged and an explanatory message is printed. Renaming a
         product to its own current name is allowed.
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    name, price, quantity = fields
+    name = normalize_product_name(name)
+    normalized_price = normalize_price(price)
+    if not name:
+        print("product name must not be blank")
+        return None
+    flag = False
+    index_of_needed_id = 0
+    for i in range(len(storage)):
+        if storage[i][PRODUCT_ID_INDEX] == product_id:
+            flag = True
+            index_of_needed_id = i
+            break
+    if not flag:
+        print(f"no product with id {product_id}")
+        return None
+    for i in range(len(storage)):
+        if i != index_of_needed_id and storage[i][NAME_INDEX] == name:
+            print(f"product name '{name}' is already taken")
+            return None
+    updated = (product_id, name, normalized_price, quantity)
+    storage[index_of_needed_id] = updated
+    return storage[index_of_needed_id]
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -127,5 +168,9 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         product carried that identifier (``storage`` is left unchanged and
         a message is printed).
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return 0
+    for i in range(len(storage)):
+        if storage[i][PRODUCT_ID_INDEX] == product_id:
+            del storage[i]
+            return product_id
+    print(f"no product with id {product_id}")
+    return None
