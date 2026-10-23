@@ -73,6 +73,7 @@ def update_product(
     return updated_product
 
 
+
 def delete_product(storage: list[Product], product_id: int) -> int | None:
     for product in storage:
         if product[PRODUCT_ID_INDEX] == product_id:
