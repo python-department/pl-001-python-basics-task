@@ -204,7 +204,7 @@ storage: list[Product] = []
 first_id = create_product(storage, ("  Cordless   Drill ", Decimal("89.999"), 12))
 second_id = create_product(storage, ("Claw Hammer", Decimal("9.9"), 40))
 
-print(first_id)   # 1
+print(first_id)  # 1
 print(second_id)  # 2
 print(storage)
 # [(1, 'cordless drill', Decimal('90.00'), 12),
@@ -220,7 +220,7 @@ create_product(storage, ("cordless drill", Decimal("50"), 3))
 result = create_product(storage, ("  CORDLESS   DRILL  ", Decimal("75"), 1))
 # печатает: product name 'cordless drill' is already taken
 
-print(result)   # None
+print(result)  # None
 print(storage)  # [(1, 'cordless drill', Decimal('50.00'), 3)]
 ```
 
@@ -232,7 +232,7 @@ storage: list[Product] = []
 result = create_product(storage, ("     ", Decimal("10"), 5))
 # печатает: product name must not be blank
 
-print(result)   # None
+print(result)  # None
 print(storage)  # []
 ```
 
@@ -271,7 +271,7 @@ storage: list[Product] = [
 ```python
 result = update_product(storage, 2, ("  Rubber   Mallet ", Decimal("7.505"), 25))
 
-print(result)   # (2, 'rubber mallet', Decimal('7.51'), 25)
+print(result)  # (2, 'rubber mallet', Decimal('7.51'), 25)
 print(storage)
 # [(1, 'cordless drill', Decimal('90.00'), 12),
 #  (2, 'rubber mallet', Decimal('7.51'), 25)]
@@ -283,7 +283,7 @@ print(storage)
 ```python
 result = update_product(storage, 1, ("CORDLESS  Drill", Decimal("85"), 10))
 
-print(result)   # (1, 'cordless drill', Decimal('85.00'), 10)
+print(result)  # (1, 'cordless drill', Decimal('85.00'), 10)
 ```
 
 Имя уже занято другим товаром, хранилище не меняется:
@@ -292,7 +292,7 @@ print(result)   # (1, 'cordless drill', Decimal('85.00'), 10)
 result = update_product(storage, 1, (" Claw Hammer ", Decimal("85"), 10))
 # печатает: product name 'claw hammer' is already taken
 
-print(result)   # None
+print(result)  # None
 print(storage)
 # [(1, 'cordless drill', Decimal('90.00'), 12),
 #  (2, 'claw hammer', Decimal('9.90'), 40)]
@@ -304,11 +304,11 @@ print(storage)
 ```python
 result = update_product(storage, 99, ("saw", Decimal("20"), 5))
 # печатает: no product with id 99
-print(result)   # None
+print(result)  # None
 
 result = update_product(storage, 99, ("     ", Decimal("20"), 5))
 # печатает: product name must not be blank (а не no product with id 99)
-print(result)   # None
+print(result)  # None
 ```
 
 ---
