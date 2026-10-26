@@ -18,24 +18,30 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import Product
+from .storage import (
+    NAME_INDEX,
+    PRICE_INDEX,
+    PRODUCT_ID_INDEX,
+    QUANTITY_INDEX,
+    Product,
+)
 
 
 # Number of fractional digits every stored price is rounded to.
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -49,7 +55,7 @@ def normalize_price(price: Decimal) -> Decimal:
         with halves rounded up.
     """
     # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -67,7 +73,7 @@ def normalize_product_name(name: str) -> str:
         whitespace.
     """
     # TODO: реализуйте функцию
-    return ""
+    return "".join(name.split()).lower()
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -91,5 +97,30 @@ def get_storage_str_representation(storage: list[Product]) -> str:
         is empty only the header and separator rows are returned, sized to
         the header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    rows: list[tuple[str, str, str, str]] = []
+    for product in storage:
+        rows.append(
+            (
+                str(product[PRODUCT_ID_INDEX]),
+                product[NAME_INDEX],
+                str(product[PRICE_INDEX]),
+                str(product[QUANTITY_INDEX]),
+            )
+        )
+    widths: list[int] = [len(header) for header in TABLE_HEADERS]
+    for row in rows:
+        for i, value in enumerate(row):
+            widths[i] = max(widths[i], len(value))
+
+    def format_row(cells: tuple[str, ...]) -> str:
+        parts = [" " + cell.ljust(widths[i]) + " " for i, cell in enumerate(cells)]
+        return "|" + "|".join(parts) + "|"
+
+    header_line = format_row(TABLE_HEADERS)
+    separator_line = "|" + "|".join("-" * (width + 2) for width in widths) + "|"
+
+    lines = [header_line, separator_line]
+    for row in rows:
+        lines.append(format_row(row))
+
+    return "\n".join(lines)
