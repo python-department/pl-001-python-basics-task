@@ -6,11 +6,11 @@ persistence, no indexing and no schema enforcement. Each element is a
 where:
 
 * ``product_id`` -- unique positive integer key, assigned by the create
-  operation in :mod:`src.part3.crud`;
+  operation in :mod:`src.part2.crud`;
 * ``name`` -- human-readable product name, unique across the store;
 * ``price`` -- price of a single unit, held as a :class:`~decimal.Decimal`
   amount rounded to a fixed number of decimal places (see
-  :func:`src.part3.utils.normalize_price`) so that money is never
+  :func:`src.part2.utils.normalize_price`) so that money is never
   subject to binary floating-point error;
 * ``quantity`` -- number of units currently in stock.
 
@@ -24,12 +24,9 @@ from typing import Final
 
 type Product = tuple[int, str, Decimal, int]
 
-# TODO: задайте позиции полей внутри кортежа Product (используйте своё решение
-# части 2)
 PRODUCT_ID_INDEX: Final = 0
-NAME_INDEX: Final = 0
-PRICE_INDEX: Final = 0
-QUANTITY_INDEX: Final = 0
+NAME_INDEX: Final = 1
+PRICE_INDEX: Final = 2
+QUANTITY_INDEX: Final = 3
 
-# TODO: задайте идентификатор первого товара в пустом хранилище
-PRODUCT_ID_MIN: Final[int] = 0
+PRODUCT_ID_MIN: Final[int] = 1
