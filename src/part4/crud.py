@@ -23,16 +23,11 @@ product -- via an O(1) membership test against ``product_names`` rather
 than a scan over ``storage.values()``.
 """
 
-import uuid  # noqa: F401
+import uuid
 from typing import Any
 
-from .storage import (  # noqa: F401
-    NAME_KEY,
-    PRICE_KEY,
-    QUANTITY_KEY,
-    Product,
-)
-from .utils import normalize_price, normalize_product_name  # noqa: F401
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id() -> str:
@@ -41,8 +36,7 @@ def generate_product_id() -> str:
     Returns:
         A freshly generated UUID, stringified.
     """
-    # TODO: реализуйте функцию
-    return ""
+    return str(uuid.uuid4())
 
 
 def create_product(
@@ -73,8 +67,24 @@ def create_product(
         and ``product_names`` are left unchanged and an explanatory
         message is printed.
     """
-    # TODO: реализуйте функцию
-    return ""
+    name = normalize_product_name(fields[NAME_KEY])
+
+    if not name:
+        print("product name must not be blank")
+        return None
+
+    if name in product_names:
+        print(f"product name '{name}' is already taken")
+        return None
+
+    product_id = generate_product_id()
+    storage[product_id] = {
+        NAME_KEY: name,
+        PRICE_KEY: normalize_price(fields[PRICE_KEY]),
+        QUANTITY_KEY: fields[QUANTITY_KEY],
+    }
+    product_names.add(name)
+    return product_id
 
 
 def read_product(storage: dict[str, Product], product_id: str) -> Product | None:
@@ -88,8 +98,10 @@ def read_product(storage: dict[str, Product], product_id: str) -> Product | None
         The matching product record, or ``None`` when no product carries
         that identifier (a message is printed in that case).
     """
-    # TODO: реализуйте функцию
-    return {}
+    product = storage.get(product_id)
+    if product is None:
+        print(f"no product with id {product_id}")
+    return product
 
 
 def update_product(
@@ -129,8 +141,30 @@ def update_product(
         and an explanatory message is printed. Renaming a product to its
         own current name is allowed.
     """
-    # TODO: реализуйте функцию
-    return {}
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    if NAME_KEY in fields:
+        name = normalize_product_name(fields[NAME_KEY])
+
+        if not name:
+            print("product name must not be blank")
+            return None
+
+        if name != product[NAME_KEY] and name in product_names:
+            print(f"product name '{name}' is already taken")
+            return None
+
+        fields[NAME_KEY] = name
+        product_names.discard(product[NAME_KEY])
+        product_names.add(name)
+
+    if PRICE_KEY in fields:
+        fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+
+    product.update(fields)
+    return product
 
 
 def delete_product(
@@ -153,5 +187,11 @@ def delete_product(
         product carried that identifier (``storage`` and ``product_names``
         are left unchanged and a message is printed).
     """
-    # TODO: реализуйте функцию
-    return ""
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    product_names.discard(product[NAME_KEY])
+    del storage[product_id]
+
+    return product_id
