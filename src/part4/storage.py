@@ -40,6 +40,6 @@ type Product = dict[str, Any]
 
 # Name of each field inside a Product record.
 # TODO: задайте имена полей записи
-NAME_KEY: Final = ""
-PRICE_KEY: Final = ""
-QUANTITY_KEY: Final = ""
+NAME_KEY: Final = "name"
+PRICE_KEY: Final = "price"
+QUANTITY_KEY: Final = "key"
