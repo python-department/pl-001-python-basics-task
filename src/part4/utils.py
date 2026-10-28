@@ -1,4 +1,4 @@
-"""Standalone helpers shared by the part4 storage and CRUD modules.
+"""Standalone helpers shared by the part3 storage and CRUD modules.
 
 Normalisation:
 
@@ -18,29 +18,17 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
+from re import sub
 from typing import Final
 
-from .storage import (  # noqa: F401
-    NAME_KEY,
-    PRICE_KEY,
-    QUANTITY_KEY,
-    Product,
-)
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 3)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
-# Column headers of the table produced by get_storage_str_representation,
-# left to right. The width of each column is not fixed here -- it is
-# measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 3)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -53,8 +41,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -71,11 +58,16 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    return sub(r"\s+", " ", name.strip()).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def format_row(values: list[str] | tuple[str, ...], widths: list[int]) -> str:
+    cells = [values[i].ljust(widths[i]) for i in range(len(widths))]
+    return "| " + " | ".join(cells) + " |"
+
+
+def separator(widths: list[int]) -> str:
+    return "|" + "|".join(["-" * (w + 2) for w in widths]) + "|"
 
 
 def get_storage_str_representation(storage: dict[str, Product]) -> str:
@@ -92,9 +84,24 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
 
     Returns:
         A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage``, in insertion order. When
-        ``storage`` is empty only the header and separator rows are
-        returned, sized to the header labels.
+        one row per product in ``storage`` in list order. When ``storage``
+        is empty only the header and separator rows are returned, sized to
+        the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    rows: list[list[str]] = []
+    for ID, value in storage.items():
+        product: Product = value
+        rows.append(
+            [ID, product[NAME_KEY], str(product[PRICE_KEY]), str(product[QUANTITY_KEY])]
+        )
+
+    widths: list[int] = [len(h) for h in TABLE_HEADERS]
+    for row in rows:
+        for i in range(len(row)):
+            widths[i] = max(widths[i], len(row[i]))
+
+    lines = [format_row(TABLE_HEADERS, widths), separator(widths)]
+    for row in rows:
+        lines.append(format_row(row, widths))
+
+    return "\n".join(lines)
