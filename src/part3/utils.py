@@ -18,7 +18,7 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .storage import Product
@@ -28,14 +28,14 @@ from .storage import Product
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -48,8 +48,8 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    # TODO: реализуйте функцию
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -67,7 +67,7 @@ def normalize_product_name(name: str) -> str:
         whitespace.
     """
     # TODO: реализуйте функцию
-    return ""
+    return " ".join(name.split()).lower()
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -92,4 +92,46 @@ def get_storage_str_representation(storage: list[Product]) -> str:
         the header labels.
     """
     # TODO: реализуйте функцию
-    return ""
+    ids = []
+    names = []
+    prices = []
+    quantitys = []
+
+    for product in storage:
+        ids.append(str(product[0]))
+        names.append(product[1])
+        prices.append(str(product[2]))
+        quantitys.append(str(product[3]))
+
+    w_id = max(len(TABLE_HEADERS[0]), max((len(x) for x in ids), default=0))
+    w_name = max(len(TABLE_HEADERS[1]), max((len(x) for x in names), default=0))
+    w_pr = max(len(TABLE_HEADERS[2]), max((len(x) for x in prices), default=0))
+    w_qty = max(len(TABLE_HEADERS[3]), max((len(x) for x in quantitys), default=0))
+
+    change_str_main = (
+        f"| {TABLE_HEADERS[0].ljust(w_id)} "
+        f"| {TABLE_HEADERS[1].ljust(w_name)} "
+        f"| {TABLE_HEADERS[2].ljust(w_pr)} "
+        f"| {TABLE_HEADERS[3].ljust(w_qty)} |"
+    )
+
+    change_str_dif = (
+        f"|{'-' * (w_id + 2)}"
+        f"|{'-' * (w_name + 2)}"
+        f"|{'-' * (w_pr + 2)}"
+        f"|{'-' * (w_qty + 2)}|"
+    )
+
+    rows = []
+    for i in range(len(storage)):
+        row = (
+            f"| {ids[i].ljust(w_id)} "
+            f"| {names[i].ljust(w_name)} "
+            f"| {prices[i].ljust(w_pr)} "
+            f"| {quantitys[i].ljust(w_qty)} |"
+        )
+        rows.append(row)
+
+    res = "\n".join([change_str_main, change_str_dif, *rows])
+
+    return res
