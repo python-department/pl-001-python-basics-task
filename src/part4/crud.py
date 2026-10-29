@@ -166,7 +166,8 @@ def update_product(
                 storage[product_id][NAME_KEY] = name
 
         elif key == PRICE_KEY:
-            storage[product_id][PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+            fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+            storage[product_id][PRICE_KEY] = fields[PRICE_KEY]
 
         elif key == QUANTITY_KEY:
             storage[product_id][QUANTITY_KEY] = fields[QUANTITY_KEY]
