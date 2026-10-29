@@ -24,8 +24,13 @@ type CartLine = tuple[int, int]
 
 # TODO: задайте позиции полей внутри кортежа CartLine
 LINE_PRODUCT_ID_INDEX: Final = 0
-LINE_QUANTITY_INDEX: Final = 0
+LINE_QUANTITY_INDEX: Final = 1
 
+def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine | None:
+    for line in cart:
+        if line[LINE_PRODUCT_ID_INDEX] == product_id:
+            return line
+    return None
 
 def add_to_cart(
     storage: list[Product],
@@ -54,8 +59,21 @@ def add_to_cart(
         when the product is unknown or the store cannot cover the request.
     """
     # TODO: реализуйте функцию
-    return (0, 0)
-
+    product = read_product(storage, product_id)
+    if product:
+        if product[QUANTITY_INDEX] < quantity:
+            print(f"not enough stock for product {product_id}: {product[QUANTITY_INDEX]} available, {quantity} requested")
+            return None
+        product = update_product(storage, product_id, (product[NAME_INDEX], product[PRICE_INDEX], product[QUANTITY_INDEX] - quantity))
+        for line in cart:
+            if line[LINE_PRODUCT_ID_INDEX] == product_id:
+                new_line = (product_id, line[LINE_QUANTITY_INDEX] + quantity)
+                cart[cart.index(line)] = new_line
+                return new_line
+        new_line =(product_id, quantity)
+        cart.append(new_line)
+        return new_line
+    return None
 
 def remove_from_cart(
     storage: list[Product],
@@ -86,4 +104,25 @@ def remove_from_cart(
         line for the product or holds too few units.
     """
     # TODO: реализуйте функцию
-    return (0, 0)
+    line = find_cart_line(cart, product_id)
+    if line is None:
+        print(f"product {product_id} is not in the cart")
+        return None
+    if line[LINE_QUANTITY_INDEX] < quantity:
+        print(f"cart holds only {line[LINE_QUANTITY_INDEX]} unit(s) "
+              f"of product {product_id}, cannot remove {quantity}")
+        return None
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+    update_product(
+    storage,
+    product_id,
+    (product[NAME_INDEX], product[PRICE_INDEX], product[QUANTITY_INDEX] + quantity,),)
+    new_quantity = line[LINE_QUANTITY_INDEX] - quantity
+    if new_quantity == 0:
+        cart.remove(line)
+        return (product_id, 0)
+    new_line = (product_id, new_quantity)
+    cart[cart.index(line)] = new_line
+    return new_line
