@@ -1,0 +1,5 @@
+x = 0b1101
+y = bin(x)
+print(x)
+print(bin(x))   
+print(int(y))
