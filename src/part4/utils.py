@@ -1,4 +1,4 @@
-"""Standalone helpers shared by the part3 storage and CRUD modules.
+"""Standalone helpers shared by the part4 storage and CRUD modules.
 
 Normalisation:
 
@@ -25,9 +25,14 @@ from typing import Final
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
+# Number of fractional digits every stored price is rounded to.
+# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 PRICE_PRECISION: Final[int] = 2
 PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
+# Column headers of the table produced by get_storage_str_representation,
+# left to right. The width of each column is not fixed here -- it is
+# measured per call from the data (see the function).
 TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
@@ -84,9 +89,9 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
 
     Returns:
         A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage`` in list order. When ``storage``
-        is empty only the header and separator rows are returned, sized to
-        the header labels.
+        one row per product in ``storage``, in insertion order. When
+        ``storage`` is empty only the header and separator rows are
+        returned, sized to the header labels.
     """
     rows: list[list[str]] = []
     for ID, value in storage.items():
