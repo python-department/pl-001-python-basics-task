@@ -19,6 +19,7 @@ product.
 """
 
 from decimal import Decimal
+
 from .storage import NAME_INDEX, PRODUCT_ID_INDEX, PRODUCT_ID_MIN, Product
 from .utils import normalize_price, normalize_product_name
 

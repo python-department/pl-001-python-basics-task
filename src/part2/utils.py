@@ -6,7 +6,7 @@ digits (:data:`PRICE_PRECISION`) that every stored price uses, keeping
 currency values free of binary floating-point error.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 
