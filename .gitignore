@@ -11,3 +11,6 @@ __pycache__/
 
 # Claude
 .claude
+
+# Macos system stuff
+.DS_Store
