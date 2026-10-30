@@ -1,3 +1,23 @@
+"""In-memory product store for the shop CRUD exercise.
+
+The store is deliberately primitive: a plain list of tuples, with no
+persistence, no indexing and no schema enforcement. Each element is a
+:data:`Product` record -- a ``(product_id, name, price, quantity)`` tuple
+where:
+
+* ``product_id`` -- unique positive integer key, assigned by the create
+  operation in :mod:`src.part3.crud`;
+* ``name`` -- human-readable product name, unique across the store;
+* ``price`` -- price of a single unit, held as a :class:`~decimal.Decimal`
+  amount rounded to a fixed number of decimal places (see
+  :func:`src.part3.utils.normalize_price`) so that money is never
+  subject to binary floating-point error;
+* ``quantity`` -- number of units currently in stock.
+
+Field positions are exposed as ``*_INDEX`` constants so callers never
+hard-code tuple offsets.
+"""
+
 from decimal import Decimal
 from typing import Final
 

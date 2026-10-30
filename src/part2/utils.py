@@ -1,4 +1,12 @@
-from decimal import ROUND_HALF_UP, Decimal
+"""Standalone helpers shared by the part2 storage and CRUD modules.
+
+For now this is limited to money handling: :func:`normalize_price` rounds a
+raw :class:`~decimal.Decimal` amount to the fixed number of fractional
+digits (:data:`PRICE_PRECISION`) that every stored price uses, keeping
+currency values free of binary floating-point error.
+"""
+
+from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
 from typing import Final
 
 
