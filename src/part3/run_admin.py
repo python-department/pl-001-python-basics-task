@@ -12,6 +12,7 @@ from .crud import (
 from .storage import Product
 from .utils import get_storage_str_representation
 
+
 PROMPT: Final[str] = "admin> "
 HELP_TEXT: Final[str] = (
     "Available commands:\n"

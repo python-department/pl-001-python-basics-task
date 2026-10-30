@@ -5,6 +5,7 @@ from typing import Final
 
 from .storage import Product
 
+
 # Округление цен
 PRICE_PRECISION: Final[int] = 2
 PRICE_STEP: Final = Decimal("0.01")
