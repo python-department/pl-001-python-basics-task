@@ -18,10 +18,10 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
@@ -49,12 +49,10 @@ def normalize_price(price: Decimal) -> Decimal:
     return true_price
 
 
-
 def normalize_product_name(name: str) -> str:
     new_name = " ".join(name.split()).lower()
 
     return new_name
-
 
 
 def get_storage_str_representation(storage: dict[str, Product]) -> str:
@@ -84,8 +82,8 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         s_new = (
             f"\n| {key:<{mx_len_id}} "
             f"| {prod[NAME_KEY]:<{mx_len_name}} "
-            f"| {str(prod[PRICE_KEY]):<{mx_len_price}} "
-            f"| {str(prod[QUANTITY_KEY]):<{mx_len_quantity}} |"
+            f"| {prod[PRICE_KEY]!s:<{mx_len_price}} "
+            f"| {prod[QUANTITY_KEY]!s:<{mx_len_quantity}} |"
         )
         s += s_new
     return s

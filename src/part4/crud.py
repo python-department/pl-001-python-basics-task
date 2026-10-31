@@ -26,13 +26,13 @@ than a scan over ``storage.values()``.
 import uuid
 from typing import Any
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
     Product,
 )
-from .utils import normalize_price, normalize_product_name  # noqa: F401
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id() -> str:
@@ -48,10 +48,10 @@ def create_product(
     if not form_name:
         print("product name must not be blank")
         return None
-    
+
     if form_name in product_names:
-            print(f"product name {form_name!r   } is already taken")
-            return None
+        print(f"product name {form_name!r} is already taken")
+        return None
 
     new_id = generate_product_id()
     form_price = normalize_price(fields[PRICE_KEY])
@@ -64,12 +64,10 @@ def create_product(
     product_names.add(form_name)
     return new_id
 
-    
-
 
 def read_product(storage: dict[str, Product], product_id: str) -> Product | None:
     if product_id in storage:
-         return storage[product_id]
+        return storage[product_id]
 
     print(f"no product with id {product_id}")
     return None
@@ -81,39 +79,34 @@ def update_product(
     product_id: str,
     fields: dict[str, Any],
 ) -> Product | None:
-    """Overwrite the fields of the product stored under ``product_id``.
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    curr_product = storage[product_id]
+    curr_name = curr_product[NAME_KEY]
 
-    The identifier itself is preserved. ``fields`` may carry any subset of
-    ``name``, ``price`` and ``quantity``; a key that is missing keeps the
-    value the product already has, so a caller can update a single field
-    without repeating the other two.
+    if NAME_KEY in fields:
+        form_name = normalize_product_name(fields[NAME_KEY])
+        if not form_name:
+            print("product name must not be blank")
+            return None
 
-    Args:
-        storage: The product store to modify; the matching record is
-            updated in place on success.
-        product_names: The normalised names already in ``storage``; on a
-            successful rename the old name is removed from it and the new
-            one added.
-        product_id: The identifier of the product to change.
-        fields: A dictionary with any of the ``name``, ``price`` and
-            ``quantity`` keys (see :data:`~src.part4.storage.NAME_KEY`,
-            :data:`~src.part4.storage.PRICE_KEY` and
-            :data:`~src.part4.storage.QUANTITY_KEY`) holding the new
-            values. ``price`` is a :class:`~decimal.Decimal` amount and is
-            rounded to the stored money precision before it is saved.
-            Mutated in place: a ``name`` or ``price`` value present in
-            ``fields`` is overwritten with its normalised form.
+        if form_name != curr_name and form_name in product_names:
+            print(f"product name {form_name!r} is already taken")
+            return None
 
-    Returns:
-        The updated product record, or ``None`` when ``name`` is present
-        and blank once normalised, no product carries that identifier, or
-        the normalised name is already taken by another product. In every
-        ``None`` case ``storage`` and ``product_names`` are left unchanged
-        and an explanatory message is printed. Renaming a product to its
-        own current name is allowed.
-    """
-    # TODO: реализуйте функцию
-    return {}
+        fields[NAME_KEY] = form_name
+
+    if PRICE_KEY in fields:
+        form_price = normalize_price(fields[PRICE_KEY])
+        fields[PRICE_KEY] = form_price
+
+    if NAME_KEY in fields and fields[NAME_KEY] != curr_name:
+        product_names.remove(curr_name)
+        product_names.add(fields[NAME_KEY])
+
+    curr_product.update(fields)
+    return curr_product
 
 
 def delete_product(
@@ -121,20 +114,10 @@ def delete_product(
     product_names: set[str],
     product_id: str,
 ) -> str | None:
-    """Remove the product stored under ``product_id`` from ``storage``.
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
 
-    Args:
-        storage: The product store to remove from; modified in place on
-            success.
-        product_names: The normalised names already in ``storage``; the
-            departing product's name is removed from it in place on
-            success.
-        product_id: The identifier of the product to remove.
-
-    Returns:
-        ``product_id`` when a product was removed, or ``None`` when no
-        product carried that identifier (``storage`` and ``product_names``
-        are left unchanged and a message is printed).
-    """
-    # TODO: реализуйте функцию
-    return ""
+    product = storage.pop(product_id)
+    product_names.remove(product[NAME_KEY])
+    return product_id
