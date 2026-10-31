@@ -20,13 +20,20 @@ product.
 
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price, normalize_product_name  # noqa: F401
+from .utils import normalize_price, normalize_product_name
+
+
+def find_product_index(storage: list[Product], product_id: int) -> int | None:
+    for index, product in enumerate(storage):
+        if product[PRODUCT_ID_INDEX] == product_id:
+            return index
+    return None
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -40,8 +47,10 @@ def generate_product_id(storage: list[Product]) -> int:
         :data:`~src.part3.storage.PRODUCT_ID_MIN` when ``storage`` is
         empty.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return 0
+
+    if not storage:
+        return PRODUCT_ID_MIN
+    return max(product[PRODUCT_ID_INDEX] for product in storage) + 1
 
 
 def create_product(
@@ -64,8 +73,24 @@ def create_product(
         normalised name already exists. In the ``None`` case ``storage``
         is left unchanged and an explanatory message is printed.
     """
-    # TODO: реализуйте функцию
-    return 0
+
+    name, price, quantity = fields
+    norm_name = normalize_product_name(name)
+
+    if not norm_name:
+        print("product name must not be blank")
+        return None
+
+    for product in storage:
+        if product[NAME_INDEX] == norm_name:
+            print(f"product name '{norm_name}' is already taken")
+            return None
+
+    new_id = generate_product_id(storage)
+    new_product = (new_id, norm_name, normalize_price(price), quantity)
+    storage.append(new_product)
+
+    return new_id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -80,8 +105,11 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
         ``None`` when no product carries that identifier (a message is
         printed in that case).
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return (0, "", Decimal(0), 0)
+    index = find_product_index(storage, product_id)
+    if index is None:
+        print(f"no product with id {product_id}")
+        return None
+    return storage[index]
 
 
 def update_product(
@@ -110,8 +138,27 @@ def update_product(
         unchanged and an explanatory message is printed. Renaming a
         product to its own current name is allowed.
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+
+    name, price, quantity = fields
+    norm_name = normalize_product_name(name)
+
+    if not norm_name:
+        print("product name must not be blank")
+        return None
+
+    index = find_product_index(storage, product_id)
+    if index is None:
+        print(f"no product with id {product_id}")
+        return None
+
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] != product_id and product[NAME_INDEX] == norm_name:
+            print(f"product name '{norm_name}' is already taken")
+            return None
+
+    updated_product = (product_id, norm_name, normalize_price(price), quantity)
+    storage[index] = updated_product
+    return updated_product
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -127,5 +174,11 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         product carried that identifier (``storage`` is left unchanged and
         a message is printed).
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return 0
+
+    index = find_product_index(storage, product_id)
+    if index is None:
+        print(f"no product with id {product_id}")
+        return None
+
+    storage.pop(index)
+    return product_id
