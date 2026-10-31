@@ -41,8 +41,7 @@ def generate_product_id() -> str:
     Returns:
         A freshly generated UUID, stringified.
     """
-    # TODO: реализуйте функцию
-    return ""
+    return str(uuid.uuid4())
 
 
 def create_product(
@@ -73,8 +72,21 @@ def create_product(
         and ``product_names`` are left unchanged and an explanatory
         message is printed.
     """
-    # TODO: реализуйте функцию
-    return ""
+    normalized_name = normalize_product_name(fields[NAME_KEY])
+    if not normalized_name:
+        print("product name must not be blank")
+        return None
+    if normalized_name in product_names:
+        print(f"product name '{normalized_name}' is already taken")
+        return None
+    
+    #шанс мал, но никогда не равен нулю)
+    while (id := generate_product_id()) in storage.keys():
+        continue
+
+    storage[id] = {NAME_KEY: normalized_name, PRICE_KEY: normalize_price(fields[PRICE_KEY]), QUANTITY_KEY: fields[QUANTITY_KEY]}
+    product_names.add(normalized_name)
+    return id
 
 
 def read_product(storage: dict[str, Product], product_id: str) -> Product | None:
@@ -89,7 +101,11 @@ def read_product(storage: dict[str, Product], product_id: str) -> Product | None
         that identifier (a message is printed in that case).
     """
     # TODO: реализуйте функцию
-    return {}
+    if product_id not in storage.keys():
+        print(f"no product with id {product_id}")
+        return None
+
+    return storage[product_id]
 
 
 def update_product(
@@ -129,8 +145,28 @@ def update_product(
         and an explanatory message is printed. Renaming a product to its
         own current name is allowed.
     """
-    # TODO: реализуйте функцию
-    return {}
+    if product_id not in storage.keys():
+        print(f"no product with id {product_id}")
+        return None
+    if fields.get(NAME_KEY) is not None:
+        fields[NAME_KEY] = normalize_product_name(fields[NAME_KEY])
+        if not fields[NAME_KEY]: # Проверить, может кинуть ошибку при пустом имени
+            print("product name must not be blank")
+            return None
+        if (storage[product_id][NAME_KEY] != fields[NAME_KEY]) and (fields[NAME_KEY] in product_names):
+            print(f"product name '{fields[NAME_KEY]}' is already taken")
+            return None
+    if fields.get(PRICE_KEY) is not None:
+        fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+
+    # Запись в fields
+    if fields.get(NAME_KEY) is not None:
+        if storage[product_id][NAME_KEY] != fields[NAME_KEY]:
+            product_names.remove(storage[product_id][NAME_KEY])
+            product_names.add(fields[NAME_KEY])
+    storage[product_id].update(fields.items())
+
+    return storage[product_id]
 
 
 def delete_product(
@@ -153,5 +189,11 @@ def delete_product(
         product carried that identifier (``storage`` and ``product_names``
         are left unchanged and a message is printed).
     """
-    # TODO: реализуйте функцию
-    return ""
+    if storage.get(product_id) is None:
+        print(f"no product with id {product_id}")
+        return None
+
+    product_names.remove(storage[product_id][NAME_KEY])
+    del storage[product_id]
+
+    return product_id

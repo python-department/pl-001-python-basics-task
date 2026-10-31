@@ -42,7 +42,7 @@ from .utils import get_storage_str_representation  # noqa: F401
 
 
 # TODO: задайте приглашение и текст справки (используйте своё решение части 3)
-PROMPT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
 HELP_TEXT: Final[str] = ""
 
 

@@ -2,10 +2,10 @@ from decimal import Decimal, InvalidOperation
 
 import pytest
 
-from ..crud import create_product, update_product
-from ..run_admin import HELP_TEXT, PROMPT, main, print_result, run_command, show_help
-from ..storage import Product
-from ..utils import (
+from ...src.part3.crud import create_product, update_product
+from ...src.part3.run_admin import HELP_TEXT, PROMPT, main, print_result, run_command, show_help
+from ...src.part3.storage import Product
+from ...src.part3.utils import (
     TABLE_HEADERS,
     get_storage_str_representation,
     normalize_product_name,
