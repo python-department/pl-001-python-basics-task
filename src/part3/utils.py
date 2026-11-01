@@ -18,24 +18,30 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import Product
+from .storage import (
+    NAME_INDEX,
+    PRICE_INDEX,
+    PRODUCT_ID_INDEX,
+    QUANTITY_INDEX,
+    Product,
+)
 
 
 # Number of fractional digits every stored price is rounded to.
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal("0.01")
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quatity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -49,7 +55,7 @@ def normalize_price(price: Decimal) -> Decimal:
         with halves rounded up.
     """
     # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -67,7 +73,7 @@ def normalize_product_name(name: str) -> str:
         whitespace.
     """
     # TODO: реализуйте функцию
-    return ""
+    return " ".join(name.split()).lower()
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -92,4 +98,27 @@ def get_storage_str_representation(storage: list[Product]) -> str:
         the header labels.
     """
     # TODO: реализуйте функцию
-    return ""
+    rows_data = []
+    for product in storage:
+        rows_data.append(
+            (
+                str(product[PRODUCT_ID_INDEX]),
+                str(product[NAME_INDEX]),
+                str(product[PRICE_INDEX]),
+                str(product[QUANTITY_INDEX]),
+            )
+        )
+    widths = [len(header) for header in TABLE_HEADERS]
+    for row in rows_data:
+        for i, cell in enumerate(row):
+            widths[i] = max(widths[i], len(cell))
+    header_cells = [f"{header:<{widths[i]}}" for i, header in enumerate(TABLE_HEADERS)]
+    header_line = "| " + " | ".join(header_cells) + " |"
+    separator_cells = ["-" * (widths[i] + 2) for i in range(len(TABLE_HEADERS))]
+    separator_line = "|" + "|".join(separator_cells) + "|"
+    data_lines = []
+    for row in rows_data:
+        cells = [f"{cell:<{widths[i]}}" for i, cell in enumerate(row)]
+        data_lines.append("| " + " | ".join(cells) + " |")
+    result_lines = [header_line, separator_line] + data_lines
+    return "\n".join(result_lines)
