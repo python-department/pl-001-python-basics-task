@@ -5,7 +5,6 @@ from .crud import create_product, delete_product, read_product, update_product
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import get_storage_str_representation
 
-
 PROMPT: Final = "admin> "
 HELP_TEXT: Final = (
     "Available commands:\n"
@@ -49,20 +48,17 @@ def run_command(
         return False
 
     if (cmd == "show" or cmd == "list") and len(words) == 1:
-        result = get_storage_str_representation(storage)
-        print_result(result)
+        print_result(get_storage_str_representation(storage))
         return True
 
     if cmd == "read" and len(words) == 2:
         product_id = words[1]
-        result = read_product(storage, product_id)
-        print_result(result)
+        print_result(read_product(storage, product_id))
         return True
 
     if cmd == "delete" and len(words) == 2:
         product_id = words[1]
-        result = delete_product(storage, product_names, product_id)
-        print_result(result)
+        print_result(delete_product(storage, product_names, product_id))
         return True
 
     if cmd == "create" and len(words) >= 4:
@@ -74,8 +70,7 @@ def run_command(
             PRICE_KEY: price,
             QUANTITY_KEY: qty,
         }
-        result = create_product(storage, product_names, fields)
-        print_result(result)
+        print_result(create_product(storage, product_names, fields))
         return True
 
     if cmd == "update" and len(words) >= 5:
@@ -88,8 +83,7 @@ def run_command(
             PRICE_KEY: price,
             QUANTITY_KEY: qty,
         }
-        result = update_product(storage, product_names, product_id, fields)
-        print_result(result)
+        print_result(update_product(storage, product_names, product_id, fields))
         return True
 
     print(f"{line!r} is not a command")
