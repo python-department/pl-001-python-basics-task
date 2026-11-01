@@ -32,7 +32,6 @@ set must always mirror the normalised names present in ``storage``; the
 functions in :mod:`src.part4.crud` keep the two in sync on every
 successful create, update and delete.
 """
-
 from typing import Any, Final
 
 
@@ -40,6 +39,6 @@ type Product = dict[str, Any]
 
 # Name of each field inside a Product record.
 # TODO: задайте имена полей записи
-NAME_KEY: Final = ""
-PRICE_KEY: Final = ""
-QUANTITY_KEY: Final = ""
+NAME_KEY: Final = "name"
+PRICE_KEY: Final = "price"
+QUANTITY_KEY: Final = "quantity"
