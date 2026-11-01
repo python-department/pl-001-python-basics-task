@@ -41,30 +41,27 @@ from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product  # noqa: F401
 from .utils import get_storage_str_representation  # noqa: F401
 
 
-# TODO: задайте приглашение и текст справки (используйте своё решение части 3)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "> "
+HELP_TEXT: Final[str] = (
+    "Commands:\n"
+    "  help                                              -- show this help\n"
+    "  exit                                              -- quit\n"
+    "  show                                              -- show the store\n"
+    "  create <name...> <price> <quantity>              -- add a product\n"
+    "  read <id>                                         -- show a product\n"
+    "  update <id> <name...> <price> <quantity>          -- update a product\n"
+    "  delete <id>                                       -- remove a product\n"
+    "Multi-word names need no quoting: the price and quantity are the last two words."
+)
 
 
 def show_help() -> None:
-    """Print the command reference to stdout.
-
-    The text is the module-level :data:`HELP_TEXT` constant, printed as
-    is: a heading, one line per command with a short description, and a
-    note on how multi-word names are parsed.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
-    """Print a CRUD result to stdout unless it is ``None``.
-
-    Args:
-        result: The value returned by a CRUD operation. ``None`` means the
-            operation already reported its own failure, so nothing is
-            printed in that case.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    if result is not None:
+        print(result)
 
 
 def run_command(
