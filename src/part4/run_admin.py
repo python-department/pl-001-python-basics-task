@@ -28,17 +28,17 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
-from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product  # noqa: F401
-from .utils import get_storage_str_representation  # noqa: F401
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import get_storage_str_representation
 
 
 # TODO: задайте приглашение и текст справки (используйте своё решение части 3)

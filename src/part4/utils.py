@@ -18,10 +18,10 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,

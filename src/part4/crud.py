@@ -23,16 +23,16 @@ product -- via an O(1) membership test against ``product_names`` rather
 than a scan over ``storage.values()``.
 """
 
-import uuid  # noqa: F401
+import uuid
 from typing import Any
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
     Product,
 )
-from .utils import normalize_price, normalize_product_name  # noqa: F401
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id() -> str:
