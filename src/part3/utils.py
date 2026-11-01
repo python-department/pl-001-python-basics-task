@@ -32,6 +32,8 @@ PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 # measured per call from the data (see the function).
 TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
+storage: list[tuple[int, str, Decimal, int]] = []
+
 
 def normalize_price(price: Decimal) -> Decimal:
     return price.quantize(PRICE_STEP, ROUND_HALF_UP)
@@ -44,40 +46,29 @@ def normalize_product_name(name: str) -> str:
 def get_storage_str_representation(storage: list[Product]) -> str:
     column_width = [len(header) for header in TABLE_HEADERS]
     for product in storage:
-        column_width[0] = max(column_width[0], len(str(product[0])))
-        column_width[1] = max(column_width[1], len(str(product[1])))
-        column_width[2] = max(column_width[2], len(str(product[2])))
-        column_width[3] = max(column_width[3], len(str(product[3])))
-
-    id, name, price, quantity = TABLE_HEADERS
-    header_row_mas = [
-        f" {id.ljust(column_width[0])} ",
-        f" {name.ljust(column_width[1])} ",
-        f" {price.ljust(column_width[2])} ",
-        f" {quantity.ljust(column_width[3])} ",
-    ]
-    header_row = f"|{'|'.join(header_row_mas)}|"
-
-    delimiter_row_mas = [
-        "".ljust(column_width[0] + 2, "-"),
-        "".ljust(column_width[1] + 2, "-"),
-        "".ljust(column_width[2] + 2, "-"),
-        "".ljust(column_width[3] + 2, "-"),
-    ]
-    delimiter_row = f"|{'|'.join(delimiter_row_mas)}|"
+        for i, value in enumerate(product):
+            column_width[i] = max(column_width[i], len(str(value)))
+    header_row = (
+        "|"
+        + "|".join(
+            f" {header.ljust(width)} "
+            for header, width in zip(TABLE_HEADERS, column_width)
+        )
+        + "|"
+    )
+    delimiter_row = "|" + "|".join("-" * (width + 2) for width in column_width) + "|"
 
     table_rows = [header_row, delimiter_row]
+
     for product in storage:
-        id, name, price, quantity = map(str, product)
-        row_mas = [
-            f" {id.ljust(column_width[0])} ",
-            f" {name.ljust(column_width[1])} ",
-            f" {price.ljust(column_width[2])} ",
-            f" {quantity.ljust(column_width[3])} ",
-        ]
-        row = f"|{'|'.join(row_mas)}|"
+        row = (
+            "|"
+            + "|".join(
+                f" {str(value).ljust(width)} "
+                for value, width in zip(product, column_width)
+            )
+            + "|"
+        )
         table_rows.append(row)
+
     return "\n".join(table_rows)
-
-
-storage: list[tuple[int, str, Decimal, int]] = []

@@ -69,20 +69,22 @@ def update_product(
     if name == "":
         return print("product name must not be blank")
 
-    for index, product in enumerate(storage):
-        if product[PRODUCT_ID_INDEX] == product_id:
-            for other_product in storage:
-                if (
-                    other_product[NAME_INDEX] == name
-                    and other_product[PRODUCT_ID_INDEX] != product_id
-                ):
-                    return print(f"product name '{name}' is already taken")
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
 
-            price = normalize_price(price)
-            updated_product = (product_id, name, price, quantity)
-            storage[index] = updated_product
-            return updated_product
-    return print(f"no product with id {product_id}")
+    for other_product in storage:
+        if (
+            other_product[NAME_INDEX] == name
+            and other_product[PRODUCT_ID_INDEX] != product_id
+        ):
+            return print(f"product name '{name}' is already taken")
+
+    price = normalize_price(price)
+    updated_product = (product_id, name, price, quantity)
+    storage[storage.index(product)] = updated_product
+
+    return updated_product
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
