@@ -19,4 +19,7 @@ uv run ruff format src
 echo "==> Pytest"
 uv run pytest src/part4/tests
 
+echo "==> MyPy"
+uv run mypy --strict src
+
 echo "All done."
