@@ -67,29 +67,48 @@ def print_result(result: object) -> None:
 def run_command(
     storage: dict[str, Product], product_names: set[str], line: str
 ) -> bool:
-    """Parse one console line and carry out the command it names.
+    parts = line.split()
+    if not parts:
+        print(f"{line!r} is not a command")
+        return True
 
-    Args:
-        storage: The product store shared across the session; mutated in
-            place by the ``create``, ``update`` and ``delete`` commands.
-        product_names: The normalised names already in ``storage``; kept
-            in sync by the ``create``, ``update`` and ``delete`` commands.
-        line: One line of console input, already stripped of surrounding
-            whitespace.
+    command = parts[0]
 
-    Returns:
-        ``True`` to keep the read-eval-print loop running, or ``False``
-        once the ``exit`` command has been seen. A line that is not a
-        known command prints a notice and still returns ``True``.
+    match command:
+        case "help" if len(parts) == 1:
+            show_help()
+        case "exit" if len(parts) == 1:
+            return False
+        case "show" if len(parts) == 1:
+            print(get_storage_str_representation(storage))
+        case "create" if len(parts) >= 4:
+            *name_parts, price_str, quantity_str = parts[1:]
+            fields = {
+                NAME_KEY: " ".join(name_parts),
+                PRICE_KEY: Decimal(price_str),
+                QUANTITY_KEY: int(quantity_str),
+            }
+            print_result(update_product(storage, product_names, fields))
+        case "read" if len(parts) == 2:
+            print_result(read_product(storage, parts[1]))
+        case "update" if len(parts) >= 5:
+            product_id = parts[1]
+            *name_parts, price_str, quantity_str = parts[2:]
+            fields = {
+                NAME_KEY: " ".join(name_parts),
+                PRICE_KEY: Decimal(price_str),
+                QUANTITY_KEY: int(quantity_str),
+            }
+            print_result(update_product(storage, product_names, product_id, fields))
+        case "delete" if len(parts) == 2:
+            print_result(delete_product(storage, product_names, parts[1]))
+        case _:
+            if command in ("help", "exit", "show", "create", "read", "update", "delete"):
+                print(f"{line!r} names a command but its arguments are invalid")
+            else:
+                print(f"{line!r} is not a command")
+    return True
 
-    Raises:
-        ValueError: If the quantity argument of a CRUD command does not
-            parse as a base-10 integer.
-        decimal.InvalidOperation: If the price argument of ``create`` or
-            ``update`` does not parse as a decimal number.
-    """
-    # TODO: реализуйте функцию
-    return False
 
 
 def main() -> None:
