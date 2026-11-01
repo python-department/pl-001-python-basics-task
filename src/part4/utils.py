@@ -32,7 +32,7 @@ from .storage import (
 PRICE_PRECISION: Final[int] = 2
 PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
-TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", NAME_KEY, PRICE_KEY, QUANTITY_KEY)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -83,7 +83,7 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    
+
     width = {
         header: max([len(header), *(len(str(product[inx])) for product in storage)])
         for inx, header in enumerate(TABLE_HEADERS)
