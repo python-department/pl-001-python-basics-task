@@ -13,13 +13,16 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-import time  # noqa: F401
+import time
 
-from .constants import (  # noqa: F401
+from .constants import (
     EPOCH_MS_DEFAULT,
+    NODE_ID_BITS,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
+    SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
+    TIMESTAMP_BITS,
     TIMESTAMP_MS_MAX,
 )
 
@@ -35,7 +38,7 @@ def read_current_millis(epoch_ms: int) -> int:
         negative if ``epoch_ms`` lies in the future.
     """
     # TODO: реализуйте функцию
-    return 0
+    return int(time.time() * 1000 - epoch_ms)
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
@@ -51,7 +54,8 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
         generated.
     """
     # TODO: реализуйте функцию
-    return 0
+    timestamp_ms = (snowflake_id >> 22) & (2**TIMESTAMP_BITS - 1)
+    return int(timestamp_ms + epoch_ms)
 
 
 def decode_node_id(snowflake_id: int) -> int:
@@ -65,7 +69,7 @@ def decode_node_id(snowflake_id: int) -> int:
         ``[0, NODE_ID_MAX]``.
     """
     # TODO: реализуйте функцию
-    return 0
+    return int((snowflake_id >> 12) & (2**NODE_ID_BITS - 1))
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -79,7 +83,7 @@ def decode_sequence_id(snowflake_id: int) -> int:
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
     # TODO: реализуйте функцию
-    return 0
+    return int(snowflake_id & (2**SEQUENCE_ID_BITS - 1))
 
 
 def generate_snowflake_id(
@@ -111,4 +115,17 @@ def generate_snowflake_id(
         cases an explanatory message is printed to stdout first.
     """
     # TODO: реализуйте функцию
-    return 0
+    if node_id < 0 or NODE_ID_MAX < node_id:
+        print(f"node_id must be in [{0}; {NODE_ID_MAX}]")
+
+    if 0 < sequence_id or sequence_id < SEQUENCE_ID_MAX:
+        print(f"node_id must be in [{0}; {NODE_ID_MAX}]")
+
+    timestamp_ms = int(time.time() * 1000 - epoch_ms)
+    if timestamp_ms > TIMESTAMP_MS_MAX:
+        print("overflows")
+        return None
+
+    snowflake_id = (0b0 << 63) | (timestamp_ms << 22) | (node_id << 12) | (sequence_id)
+
+    return int(snowflake_id)
