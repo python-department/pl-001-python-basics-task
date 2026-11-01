@@ -23,16 +23,16 @@ product -- via an O(1) membership test against ``product_names`` rather
 than a scan over ``storage.values()``.
 """
 
-import uuid  # noqa: F401
+import uuid
 from typing import Any
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
     Product,
 )
-from .utils import normalize_price, normalize_product_name  # noqa: F401
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id() -> str:
@@ -79,12 +79,16 @@ def create_product(
     if normalized_name in product_names:
         print(f"product name '{normalized_name}' is already taken")
         return None
-    
-    #шанс мал, но никогда не равен нулю)
-    while (id := generate_product_id()) in storage.keys():
+
+    # Very small chance, but never zero
+    while (id := generate_product_id()) in storage:
         continue
 
-    storage[id] = {NAME_KEY: normalized_name, PRICE_KEY: normalize_price(fields[PRICE_KEY]), QUANTITY_KEY: fields[QUANTITY_KEY]}
+    storage[id] = {
+        NAME_KEY: normalized_name,
+        PRICE_KEY: normalize_price(fields[PRICE_KEY]),
+        QUANTITY_KEY: fields[QUANTITY_KEY],
+    }
     product_names.add(normalized_name)
     return id
 
@@ -100,8 +104,7 @@ def read_product(storage: dict[str, Product], product_id: str) -> Product | None
         The matching product record, or ``None`` when no product carries
         that identifier (a message is printed in that case).
     """
-    # TODO: реализуйте функцию
-    if product_id not in storage.keys():
+    if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
 
@@ -145,25 +148,28 @@ def update_product(
         and an explanatory message is printed. Renaming a product to its
         own current name is allowed.
     """
-    if product_id not in storage.keys():
+    if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
     if fields.get(NAME_KEY) is not None:
         fields[NAME_KEY] = normalize_product_name(fields[NAME_KEY])
-        if not fields[NAME_KEY]: # Проверить, может кинуть ошибку при пустом имени
+        if not fields[NAME_KEY]:
             print("product name must not be blank")
             return None
-        if (storage[product_id][NAME_KEY] != fields[NAME_KEY]) and (fields[NAME_KEY] in product_names):
+        if (storage[product_id][NAME_KEY] != fields[NAME_KEY]) and (
+            fields[NAME_KEY] in product_names
+        ):
             print(f"product name '{fields[NAME_KEY]}' is already taken")
             return None
     if fields.get(PRICE_KEY) is not None:
         fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
 
-    # Запись в fields
-    if fields.get(NAME_KEY) is not None:
-        if storage[product_id][NAME_KEY] != fields[NAME_KEY]:
-            product_names.remove(storage[product_id][NAME_KEY])
-            product_names.add(fields[NAME_KEY])
+    if (
+        fields.get(NAME_KEY) is not None
+        and storage[product_id][NAME_KEY] != fields[NAME_KEY]
+    ):
+        product_names.remove(storage[product_id][NAME_KEY])
+        product_names.add(fields[NAME_KEY])
     storage[product_id].update(fields.items())
 
     return storage[product_id]

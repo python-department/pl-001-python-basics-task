@@ -18,14 +18,14 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import (  # noqa: F401
+from .storage import (
+    ID_KEY,
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
-    ID_KEY,
     Product,
 )
 
@@ -74,20 +74,21 @@ def normalize_product_name(name: str) -> str:
     return normalized_name
 
 
-def get_line_separator(storage_column_lengths: dict) -> str:
+def get_line_separator(storage_column_lengths: dict[str, int]) -> str:
     """Принимает словарь с названиями столбцов и их длинами и возвращает строку-разделитель
     вида |------|------|-----|-----|
     """
-    dashes = [ f"{'-'*(length + 2)}" for length in storage_column_lengths.values() ] # +2 чтобы учесть пробелы: | ID | name |...
-    separator = f"|{"|".join(dashes)}|"
+    dashes = [
+        f"{'-' * (length + 2)}" for length in storage_column_lengths.values()
+    ]  # +2 чтобы учесть пробелы: | ID | name |...
+    separator = f"|{'|'.join(dashes)}|"
     return separator
 
 
 def get_max_column_lenght(storage: dict[str, Product], KEY: str) -> int:
-    """Принимает storage и возвращает длину максимального элемента из всех Product
-    """
+    """Принимает storage и возвращает длину максимального элемента из всех Product"""
     values = [len(KEY)]
-    for product_dict in storage.values(): #product_dict: dict[str, Any]
+    for product_dict in storage.values():  # product_dict: dict[str, Any]
         values.append(len(str(product_dict[KEY])))
 
     return max(values)
@@ -111,39 +112,48 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    storage_column_lengths = {} #dict с длинами для каждого столбца
+    storage_column_lengths = {}  # dict с длинами для каждого столбца
     for key in TABLE_HEADERS:
         match key:
             case _header if _header == ID_KEY:
-                storage_column_lengths[ID_KEY] = max([len(ID_KEY)] + [len(storage_key) for storage_key in storage.keys()])
+                storage_column_lengths[ID_KEY] = max(
+                    [len(ID_KEY)] + [len(storage_key) for storage_key in storage]
+                )
 
             case _header if _header == NAME_KEY:
-                storage_column_lengths[NAME_KEY] = get_max_column_lenght(storage, NAME_KEY)
+                storage_column_lengths[NAME_KEY] = get_max_column_lenght(
+                    storage, NAME_KEY
+                )
 
             case _header if _header == PRICE_KEY:
-                storage_column_lengths[PRICE_KEY] = get_max_column_lenght(storage, PRICE_KEY)
+                storage_column_lengths[PRICE_KEY] = get_max_column_lenght(
+                    storage, PRICE_KEY
+                )
 
             case _header if _header == QUANTITY_KEY:
-                storage_column_lengths[QUANTITY_KEY] = get_max_column_lenght(storage, QUANTITY_KEY)
+                storage_column_lengths[QUANTITY_KEY] = get_max_column_lenght(
+                    storage, QUANTITY_KEY
+                )
 
-    # блок формирует первую и вторую строки таблицы
-    headers = list()
-    for key, value in storage_column_lengths.items():
-        headers.append(f" {key:<{value}} ")
-    table = f'|{"|".join(headers)}|\n{get_line_separator(storage_column_lengths)}'
+    headers = [f" {key:<{value}} " for key, value in storage_column_lengths.items()]
+    table = f"|{'|'.join(headers)}|\n{get_line_separator(storage_column_lengths)}"
 
     for _id, product_dict in storage.items():
         row = [f" {_id:<{storage_column_lengths[ID_KEY]}} "]
-        for key in product_dict.keys():
+        for key in product_dict:
             match key:
                 case _header if _header == NAME_KEY:
-                    row.append(f" {str(product_dict[NAME_KEY]):<{storage_column_lengths[NAME_KEY]}} ")
-    
+                    row.append(
+                        f" {product_dict[NAME_KEY]!s:<{storage_column_lengths[NAME_KEY]}} "
+                    )
                 case _header if _header == PRICE_KEY:
-                    row.append(f" {str(product_dict[PRICE_KEY]):<{storage_column_lengths[PRICE_KEY]}} ")
-    
+                    row.append(
+                        f" {product_dict[PRICE_KEY]!s:<{storage_column_lengths[PRICE_KEY]}} "
+                    )
                 case _header if _header == QUANTITY_KEY:
-                    row.append(f" {str(product_dict[QUANTITY_KEY]):<{storage_column_lengths[QUANTITY_KEY]}} ")
+                    row.append(
+                        f" {product_dict[QUANTITY_KEY]!s:<{storage_column_lengths[QUANTITY_KEY]}} "
+                    )
 
         table += f"\n|{'|'.join(row)}|"
 

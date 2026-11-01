@@ -3,9 +3,23 @@ from decimal import Decimal, InvalidOperation
 import pytest
 import uuid
 
-from src.part4.crud import create_product, update_product, generate_product_id
-from src.part4.run_admin import HELP_TEXT, PROMPT, main, print_result, run_command, show_help
-from src.part4.storage import Product, NAME_KEY, ID_KEY, PRICE_KEY, QUANTITY_KEY
+from src.part4.cart import add_to_cart, remove_from_cart
+from src.part4.crud import (
+    create_product,
+    delete_product,
+    generate_product_id,
+    read_product,
+    update_product,
+)
+from src.part4.run_admin import (
+    HELP_TEXT,
+    PROMPT,
+    main,
+    print_result,
+    run_command,
+    show_help,
+)
+from src.part4.storage import PRICE_KEY, QUANTITY_KEY, NAME_KEY, Product
 from src.part4.utils import (
     TABLE_HEADERS,
     get_storage_str_representation,
@@ -29,31 +43,26 @@ def test_constants() -> None:
 
 def test_get_storage_str_representation() -> None:
     # пустое хранилище: только заголовки и разделитель
-    # print()
-    # print(get_storage_str_representation(dict()))
     assert (
         get_storage_str_representation(dict())
         == """| ID | name | price | quantity |
 |----|------|-------|----------|"""
     )
 
-    
     test1_str = """| ID | name | price | quantity |
 |----|------|-------|----------|
 | 1  | saw  | 9.90  | 5        |
 | 2  | axe  | 12.00 | 8        |"""
-    # print("\n\n")
-    # print(get_storage_str_representation(
-    #             {"1": {"name":"saw", "price":Decimal("9.90"), "quantity":5}, "2": {"name":"axe", "price":Decimal("12.00"), "quantity":8}}
-    #         )
-    # )
     assert (
         get_storage_str_representation(
-            {"1": {"name":"saw", "price":Decimal("9.90"), "quantity":5}, "2": {"name":"axe", "price":Decimal("12.00"), "quantity":8}}
+            {
+                "1": {"name": "saw", "price": Decimal("9.90"), "quantity": 5},
+                "2": {"name": "axe", "price": Decimal("12.00"), "quantity": 8},
+            }
         )
         == test1_str
     )
-    
+
     test2_str = """| ID | name       | price   | quantity |
 |----|------------|---------|----------|
 | 10 | compressor | 1299.99 | 3        |
@@ -72,17 +81,11 @@ def test_get_storage_str_representation() -> None:
     lines = test2_str.split("\n")
     assert len({len(line) for line in lines}) == 1
     assert all(line.startswith("|") and line.endswith("|") for line in lines)
-    
+
 
 def test_generate_product_id():
-
     test_id_1 = generate_product_id()
     test_id_2 = generate_product_id()
-
-    # print()
-    # print(test_id_1)
-    # print(test_id_2)
-    # print(type(test_id_1))
 
     assert str(type(test_id_1)) == "<class 'str'>"
     assert len(test_id_1) == 36
@@ -97,18 +100,21 @@ def test_create_product(capsys: pytest.CaptureFixture[str]) -> None:
     product_id = create_product(
         storage,
         product_names,
-        {NAME_KEY: "  Cordless   Drill ", PRICE_KEY: Decimal("89.999"), QUANTITY_KEY: 12},
+        {
+            NAME_KEY: "  Cordless   Drill ",
+            PRICE_KEY: Decimal("89.999"),
+            QUANTITY_KEY: 12,
+        },
     )
 
-    assert storage == \
-    {
+    assert storage == {
         list(storage.keys())[0]: {
-            'name': 'cordless drill',
-            'price': Decimal('90.00'),
-            'quantity': 12
+            "name": "cordless drill",
+            "price": Decimal("90.00"),
+            "quantity": 12,
         }
     }
-    assert product_names == {'cordless drill'}
+    assert product_names == {"cordless drill"}
 
     storage: dict[str, Product] = {}
     product_names: set[str] = set()
@@ -121,73 +127,52 @@ def test_create_product(capsys: pytest.CaptureFixture[str]) -> None:
     result = create_product(
         storage,
         product_names,
-        {NAME_KEY: "  CORDLESS   DRILL  ", PRICE_KEY: Decimal("75"), QUANTITY_KEY: 1},
+        {
+            NAME_KEY: "  CORDLESS   DRILL  ",
+            PRICE_KEY: Decimal("75"),
+            QUANTITY_KEY: 1,
+        },
     )
     assert capsys.readouterr().out == "product name 'cordless drill' is already taken\n"
 
-    assert result == None
+    assert result is None
     assert len(storage) == 1
-    assert product_names == {'cordless drill'}
-    '''
-    taken: list[Product] = [
-        (1, "saw", Decimal("9.90"), 5),с
-        (2, "axe", Decimal("12.00"), 8),
-    ]
+    assert product_names == {"cordless drill"}
 
     # пустое имя: пустая строка или только пробельные символы
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
+
     for name in ("", "   ", " \n \t "):
-        assert create_product(taken, (name, Decimal("1.00"), 1)) is None
+        result = create_product(
+            storage,
+            product_names,
+            {NAME_KEY: name, PRICE_KEY: Decimal("1.00"), QUANTITY_KEY: 1},
+        )
+        assert result is None
         assert capsys.readouterr().out == "product name must not be blank\n"
+        assert len(storage) == 0
+        assert product_names == set()
 
-    # имя занято, сравнение идёт по нормализованной форме
-    assert create_product(taken, ("saw", Decimal("1.00"), 1)) is None
-    assert capsys.readouterr().out == "product name 'saw' is already taken\n"
-    assert create_product(taken, (" SAw   ", Decimal("1.00"), 1)) is None
-    assert capsys.readouterr().out == "product name 'saw' is already taken\n"
-    assert taken == [
-        (1, "saw", Decimal("9.90"), 5),
-        (2, "axe", Decimal("12.00"), 8),
-    ]
 
-    # успех: имя и цена нормализуются, id на один больше наибольшего
-    assert create_product(taken, ("sword", Decimal("1.00"), 1)) == 3
-    assert taken == [
-        (1, "saw", Decimal("9.90"), 5),
-        (2, "axe", Decimal("12.00"), 8),
-        (3, "sword", Decimal("1.00"), 1),
-    ]
+def test_read_product(capsys: pytest.CaptureFixture[str]) -> None:
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    # id считается как max + 1, а не len + 1
-    gappy: list[Product] = [
-        (1, "saw", Decimal("9.90"), 5),
-        (3, "axe", Decimal("12.00"), 8),
-    ]
-    assert create_product(gappy, ("sword", Decimal("1.00"), 1)) == 4
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "saw", PRICE_KEY: Decimal("9.90"), QUANTITY_KEY: 5},
+    )
 
-    # примеры из TASK.md
-    storage1: list[Product] = []
-    first_id = create_product(storage1, ("  Cordless   Drill ", Decimal("89.999"), 12))
-    second_id = create_product(storage1, ("Claw Hammer", Decimal("9.9"), 40))
-    assert first_id == 1
-    assert second_id == 2
-    assert storage1 == [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    # успешное чтение
+    result = read_product(storage, product_id)
+    assert result == {"name": "saw", "price": Decimal("9.90"), "quantity": 5}
 
-    storage2: list[Product] = []
-    assert create_product(storage2, ("cordless drill", Decimal(50), 3)) == 1
-    result = create_product(storage2, ("  CORDLESS   DRILL  ", Decimal(75), 1))
+    # товара с таким id нет
+    result = read_product(storage, "nonexistent-id")
     assert result is None
-    assert capsys.readouterr().out == "product name 'cordless drill' is already taken\n"
-    assert storage2 == [(1, "cordless drill", Decimal("50.00"), 3)]
-
-    storage3: list[Product] = []
-    result = create_product(storage3, ("     ", Decimal(10), 5))
-    assert result is None
-    assert capsys.readouterr().out == "product name must not be blank\n"
-    assert storage3 == []
-    '''
+    assert capsys.readouterr().out == "no product with id nonexistent-id\n"
 
 
 def test_update_product(capsys: pytest.CaptureFixture[str]) -> None:
@@ -197,89 +182,189 @@ def test_update_product(capsys: pytest.CaptureFixture[str]) -> None:
     product_id = create_product(
         storage,
         product_names,
-        {NAME_KEY: "Cordless Drill", PRICE_KEY: Decimal("89.99"), QUANTITY_KEY: 12},
+        {
+            NAME_KEY: "Cordless Drill",
+            PRICE_KEY: Decimal("89.99"),
+            QUANTITY_KEY: 12,
+        },
     )
 
     # Частичное обновление: меняется только количество, индекс имён остаётся прежним
-    assert update_product(storage, product_names, product_id, {QUANTITY_KEY: 7}) == \
-    {
-        'name': 'cordless drill',
-        'price': Decimal('89.99'),
-        'quantity': 7
+    assert update_product(storage, product_names, product_id, {QUANTITY_KEY: 7}) == {
+        "name": "cordless drill",
+        "price": Decimal("89.99"),
+        "quantity": 7,
     }
-    assert product_names == {'cordless drill'}
+    assert product_names == {"cordless drill"}
 
     # Переименование: имя и цена нормализуются, в индексе старое имя заменяется новым
     assert update_product(
-            storage,
-            product_names,
-            product_id,
-            {NAME_KEY: "  Hammer   Drill ", PRICE_KEY: Decimal("109.999")},
-    ) == \
-    {
-        'name': 'hammer drill',
-        'price': Decimal('110.00'),
-        'quantity': 7
+        storage,
+        product_names,
+        product_id,
+        {NAME_KEY: "  Hammer   Drill ", PRICE_KEY: Decimal("109.999")},
+    ) == {
+        "name": "hammer drill",
+        "price": Decimal("110.00"),
+        "quantity": 7,
     }
-    assert product_names == {'hammer drill'}
-    '''
-    storage1: list[Product] = [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
-
-    # успех: имя и цена нормализуются, идентификатор сохраняется
-    result = update_product(storage1, 2, ("  Rubber   Mallet ", Decimal("7.505"), 25))
-    assert result == (2, "rubber mallet", Decimal("7.51"), 25)
-    assert storage1 == [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "rubber mallet", Decimal("7.51"), 25),
-    ]
-
-    storage2: list[Product] = [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    assert product_names == {"hammer drill"}
 
     # обновление под собственным именем (в другом написании) — не конфликт
-    result = update_product(storage2, 1, ("CORDLESS  Drill", Decimal(85), 10))
-    assert result == (1, "cordless drill", Decimal("85.00"), 10)
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    storage3: list[Product] = [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "cordless drill", PRICE_KEY: Decimal("90.00"), QUANTITY_KEY: 12},
+    )
+
+    result = update_product(
+        storage,
+        product_names,
+        product_id,
+        {NAME_KEY: "CORDLESS  Drill", PRICE_KEY: Decimal(85), QUANTITY_KEY: 10},
+    )
+    assert result == {
+        "name": "cordless drill",
+        "price": Decimal("85.00"),
+        "quantity": 10,
+    }
 
     # имя занято другим товаром
-    result = update_product(storage3, 1, (" Claw Hammer ", Decimal(85), 10))
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
+
+    id1 = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "cordless drill", PRICE_KEY: Decimal("90.00"), QUANTITY_KEY: 12},
+    )
+    id2 = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "claw hammer", PRICE_KEY: Decimal("9.90"), QUANTITY_KEY: 40},
+    )
+
+    result = update_product(
+        storage,
+        product_names,
+        id1,
+        {NAME_KEY: " Claw Hammer ", PRICE_KEY: Decimal(85), QUANTITY_KEY: 10},
+    )
     assert result is None
     assert capsys.readouterr().out == "product name 'claw hammer' is already taken\n"
-    assert storage3 == [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
-
-    storage4: list[Product] = [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
 
     # товара с таким id нет
-    result = update_product(storage4, 99, ("saw", Decimal(20), 5))
+    result = update_product(storage, product_names, "nonexistent-id", {NAME_KEY: "saw"})
     assert result is None
-    assert capsys.readouterr().out == "no product with id 99\n"
+    assert capsys.readouterr().out == "no product with id nonexistent-id\n"
 
-    # пустое имя отвергается до поиска по идентификатору
-    result = update_product(storage4, 99, ("     ", Decimal(20), 5))
+    # пустое имя отвергается
+    result = update_product(storage, product_names, id1, {NAME_KEY: "     "})
     assert result is None
     assert capsys.readouterr().out == "product name must not be blank\n"
-    assert storage4 == [
-        (1, "cordless drill", Decimal("90.00"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
-    '''
 
-'''
+
+def test_delete_product(capsys: pytest.CaptureFixture[str]) -> None:
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
+
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "saw", PRICE_KEY: Decimal("9.90"), QUANTITY_KEY: 5},
+    )
+
+    # успешное удаление
+    result = delete_product(storage, product_names, product_id)
+    assert result == product_id
+    assert len(storage) == 0
+    assert product_names == set()
+
+    # товара с таким id нет
+    result = delete_product(storage, product_names, "nonexistent-id")
+    assert result is None
+    assert capsys.readouterr().out == "no product with id nonexistent-id\n"
+
+
+def test_add_to_cart(capsys: pytest.CaptureFixture[str]) -> None:
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
+    cart: dict[str, int] = {}
+
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "saw", PRICE_KEY: Decimal("9.90"), QUANTITY_KEY: 5},
+    )
+
+    # успешное добавление в корзину
+    result = add_to_cart(storage, product_names, cart, product_id, 3)
+    assert result == 3
+    assert cart == {product_id: 3}
+    assert storage[product_id][QUANTITY_KEY] == 2
+
+    # добавление еще товара
+    result = add_to_cart(storage, product_names, cart, product_id, 2)
+    assert result == 5
+    assert cart == {product_id: 5}
+    assert storage[product_id][QUANTITY_KEY] == 0
+
+    # товара недостаточно на складе
+    result = add_to_cart(storage, product_names, cart, product_id, 1)
+    assert result is None
+    assert capsys.readouterr().out == (
+        f"not enough stock for product {product_id}: 0 available, 1 requested\n"
+    )
+
+    # товара нет в хранилище
+    result = add_to_cart(storage, product_names, cart, "nonexistent-id", 1)
+    assert result is None
+    assert capsys.readouterr().out == "no product with id nonexistent-id\n"
+
+
+def test_remove_from_cart(capsys: pytest.CaptureFixture[str]) -> None:
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
+    cart: dict[str, int] = {}
+
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "saw", PRICE_KEY: Decimal("9.90"), QUANTITY_KEY: 5},
+    )
+
+    # добавляем в корзину
+    add_to_cart(storage, product_names, cart, product_id, 3)
+
+    # успешное удаление из корзины
+    result = remove_from_cart(storage, product_names, cart, product_id, 2)
+    assert result == 1
+    assert cart == {product_id: 1}
+    assert storage[product_id][QUANTITY_KEY] == 4
+
+    # удаление оставшегося товара
+    result = remove_from_cart(storage, product_names, cart, product_id, 1)
+    assert result == 0
+    assert product_id not in cart
+    assert storage[product_id][QUANTITY_KEY] == 5
+
+    # товара нет в корзине
+    result = remove_from_cart(storage, product_names, cart, product_id, 1)
+    assert result is None
+    assert capsys.readouterr().out == f"product {product_id} is not in the cart\n"
+
+    # в корзине недостаточно товара
+    add_to_cart(storage, product_names, cart, product_id, 2)
+    result = remove_from_cart(storage, product_names, cart, product_id, 5)
+    assert result is None
+    assert capsys.readouterr().out == (
+        f"cart holds only 2 unit(s) of product {product_id}, cannot remove 5\n"
+    )
+
+
 def test_show_help(capsys: pytest.CaptureFixture[str]) -> None:
     show_help()
     assert capsys.readouterr().out == HELP_TEXT + "\n"
@@ -292,107 +377,124 @@ def test_print_result(capsys: pytest.CaptureFixture[str]) -> None:
     print_result(42)
     assert capsys.readouterr().out == "42\n"
 
-    product: Product = (1, "saw", Decimal("9.90"), 5)
+    product: Product = {"name": "saw", "price": Decimal("9.90"), "quantity": 5}
     print_result(product)
-    assert capsys.readouterr().out == "(1, 'saw', Decimal('9.90'), 5)\n"
-
-
-def sample_storage() -> list[Product]:
-    """A fresh store with two products, for the run_command tests."""
-    return [
-        (1, "cordless drill", Decimal("89.99"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    # Проверяем что результат содержит ключевые части словаря
+    output = capsys.readouterr().out
+    assert "saw" in output
+    assert "9.90" in output
+    assert "5" in output
 
 
 def test_run_command_help_exit(capsys: pytest.CaptureFixture[str]) -> None:
-    storage: list[Product] = []
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    assert run_command(storage, "help") is True
+    assert run_command(storage, product_names, "help") is True
     assert capsys.readouterr().out == HELP_TEXT + "\n"
 
-    assert run_command(storage, "exit") is False
+    assert run_command(storage, product_names, "exit") is False
     assert capsys.readouterr().out == ""
-    assert storage == []
+    assert storage == {}
 
 
 def test_run_command_create(capsys: pytest.CaptureFixture[str]) -> None:
-    storage: list[Product] = []
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
     # имя нормализуется, цена округляется, печатается новый id
-    assert run_command(storage, "create Cordless Drill 89.99 12") is True
-    assert capsys.readouterr().out == "1\n"
+    assert run_command(storage, product_names, "create Cordless Drill 89.99 12") is True
+    out = capsys.readouterr().out
+    product_id_1 = out.strip()
+    assert len(storage) == 1
 
-    assert run_command(storage, "create  claw   hammer 9.9 40") is True
-    assert capsys.readouterr().out == "2\n"
-    assert storage == [
-        (1, "cordless drill", Decimal("89.99"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    assert run_command(storage, product_names, "create  claw   hammer 9.9 40") is True
+    out = capsys.readouterr().out
+    product_id_2 = out.strip()
+    assert len(storage) == 2
 
 
 def test_run_command_show(capsys: pytest.CaptureFixture[str]) -> None:
-    storage: list[Product] = []
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    assert run_command(storage, "show") is True
+    assert run_command(storage, product_names, "show") is True
     assert capsys.readouterr().out == (
         "| ID | name | price | quantity |\n|----|------|-------|----------|\n"
     )
 
-    run_command(storage, "create Cordless Drill 89.99 12")
-    run_command(storage, "create  claw   hammer 9.9 40")
+    run_command(storage, product_names, "create Cordless Drill 89.99 12")
+    run_command(storage, product_names, "create  claw   hammer 9.9 40")
     capsys.readouterr()
 
-    assert run_command(storage, "show") is True
-    assert capsys.readouterr().out == (
-        "| ID | name           | price | quantity |\n"
-        "|----|----------------|-------|----------|\n"
-        "| 1  | cordless drill | 89.99 | 12       |\n"
-        "| 2  | claw hammer    | 9.90  | 40       |\n"
-    )
+    assert run_command(storage, product_names, "show") is True
+    output = capsys.readouterr().out
+    assert "cordless drill" in output
+    assert "claw hammer" in output
+    assert "89.99" in output
+    assert "9.90" in output
 
 
 def test_run_command_read(capsys: pytest.CaptureFixture[str]) -> None:
-    storage = sample_storage()
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    assert run_command(storage, "read 1") is True
-    assert capsys.readouterr().out == "(1, 'cordless drill', Decimal('89.99'), 12)\n"
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "cordless drill", PRICE_KEY: Decimal("89.99"), QUANTITY_KEY: 12},
+    )
 
-    assert run_command(storage, "read 5") is True
-    assert capsys.readouterr().out == "no product with id 5\n"
-    assert storage == [
-        (1, "cordless drill", Decimal("89.99"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    assert run_command(storage, product_names, f"read {product_id}") is True
+    output = capsys.readouterr().out
+    assert "cordless drill" in output
+    assert "89.99" in output
+
+    assert run_command(storage, product_names, "read nonexistent-id") is True
+    assert capsys.readouterr().out == "no product with id nonexistent-id\n"
 
 
 def test_run_command_update(capsys: pytest.CaptureFixture[str]) -> None:
-    storage = sample_storage()
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    assert run_command(storage, "update 2 mallet 7.50 30") is True
-    assert capsys.readouterr().out == "(2, 'mallet', Decimal('7.50'), 30)\n"
-    assert storage == [
-        (1, "cordless drill", Decimal("89.99"), 12),
-        (2, "mallet", Decimal("7.50"), 30),
-    ]
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "claw hammer", PRICE_KEY: Decimal("9.90"), QUANTITY_KEY: 40},
+    )
+    capsys.readouterr()
+
+    assert run_command(storage, product_names, f"update {product_id} mallet 7.50 30") is True
+    output = capsys.readouterr().out
+    assert "mallet" in output
+    assert "7.50" in output
+    assert "30" in output
 
 
 def test_run_command_delete(capsys: pytest.CaptureFixture[str]) -> None:
-    storage = sample_storage()
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    assert run_command(storage, "delete 2") is True
-    assert capsys.readouterr().out == "2\n"
+    product_id = create_product(
+        storage,
+        product_names,
+        {NAME_KEY: "claw hammer", PRICE_KEY: Decimal("9.90"), QUANTITY_KEY: 40},
+    )
+    capsys.readouterr()
 
-    assert run_command(storage, "delete 2") is True
-    assert capsys.readouterr().out == "no product with id 2\n"
-    assert storage == [(1, "cordless drill", Decimal("89.99"), 12)]
+    assert run_command(storage, product_names, f"delete {product_id}") is True
+    assert capsys.readouterr().out == f"{product_id}\n"
+
+    assert run_command(storage, product_names, f"delete {product_id}") is True
+    assert capsys.readouterr().out == f"no product with id {product_id}\n"
 
 
 def test_run_command_not_a_command(capsys: pytest.CaptureFixture[str]) -> None:
-    storage = sample_storage()
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    # неизвестная команда, неверное число аргументов и create/update без
-    # слов имени: одно и то же сообщение, хранилище не меняется
+    # неизвестная команда, неверное число аргументов: одно и то же сообщение
     for line in (
         "frobnicate 1 2",
         "read 1 2 3",
@@ -404,38 +506,28 @@ def test_run_command_not_a_command(capsys: pytest.CaptureFixture[str]) -> None:
         "create 89.90 12",
         "update 1 89.90 12",
     ):
-        assert run_command(storage, line) is True
+        assert run_command(storage, product_names, line) is True
         assert capsys.readouterr().out == f"'{line}' is not a command\n"
-    assert storage == [
-        (1, "cordless drill", Decimal("89.99"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    assert storage == {}
 
 
-# помогла написать нейронка
 def test_run_command_invalid_arguments(capsys: pytest.CaptureFixture[str]) -> None:
-    storage = sample_storage()
+    storage: dict[str, Product] = {}
+    product_names: set[str] = set()
 
-    # id/цена/количество не разбираются: исключение (ловится в main),
-    # хранилище и stdout не меняются
+    # цена/количество не разбираются: исключение (ловится в main)
+    # Note: для части 4 id передается строкой, поэтому ValueError не возникает
     for line, exc_type in (
-        ("read abc", ValueError),
-        ("delete abc", ValueError),
-        ("update abc claw hammer 1.00 1", ValueError),
         ("create foo 1.00 abc", ValueError),
         ("create foo abc 5", InvalidOperation),
-        ("update 1 foo abc 2", InvalidOperation),
+        ("update id-1 foo abc 2", InvalidOperation),
     ):
         with pytest.raises(exc_type):
-            run_command(storage, line)
+            run_command(storage, product_names, line)
         assert capsys.readouterr().out == ""
-    assert storage == [
-        (1, "cordless drill", Decimal("89.99"), 12),
-        (2, "claw hammer", Decimal("9.90"), 40),
-    ]
+    assert storage == {}
 
 
-# помогла написать нейронка
 def test_main_session(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -444,33 +536,23 @@ def test_main_session(
             "create Cordless Drill 89.99 12",
             "create  claw   hammer 9.9 40",
             "show",
-            "read 5",
+            "read nonexistent-id",
             "exit",
         ]
     )
     monkeypatch.setattr("builtins.input", lambda prompt="": next(lines))
     main()
-    assert capsys.readouterr().out == (
-        "1\n"
-        "2\n"
-        "| ID | name           | price | quantity |\n"
-        "|----|----------------|-------|----------|\n"
-        "| 1  | cordless drill | 89.99 | 12       |\n"
-        "| 2  | claw hammer    | 9.90  | 40       |\n"
-        "no product with id 5\n"
-    )
+    output = capsys.readouterr().out
+    assert "cordless drill" in output
+    assert "claw hammer" in output
+    assert "no product with id nonexistent-id" in output
 
 
-# помогла написать нейронка
 def test_main_catches_invalid_arguments(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     lines = iter(["create foo abc 5", "read x", "exit"])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(lines))
     main()
-    assert capsys.readouterr().out == (
-        "'create foo abc 5' names a command but its arguments are invalid\n"
-        "'read x' names a command but its arguments are invalid\n"
-    )
-
-'''
+    output = capsys.readouterr().out
+    assert "names a command but its arguments are invalid" in output

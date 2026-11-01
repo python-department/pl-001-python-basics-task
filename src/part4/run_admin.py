@@ -28,17 +28,17 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
-from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product  # noqa: F401
-from .utils import get_storage_str_representation  # noqa: F401
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import get_storage_str_representation
 
 
 PROMPT: Final[str] = "admin> "
@@ -127,7 +127,11 @@ def run_command(
                 print(f"'{line}' is not a command")
                 return True
 
-            fields = {NAME_KEY: " ".join(name), PRICE_KEY: Decimal(price), QUANTITY_KEY: int(quantity)}
+            fields = {
+                NAME_KEY: " ".join(name),
+                PRICE_KEY: Decimal(price),
+                QUANTITY_KEY: int(quantity),
+            }
             print_result(create_product(storage, product_names, fields))
             return True
 
@@ -136,7 +140,11 @@ def run_command(
                 print(f"'{line}' is not a command")
                 return True
 
-            fields = {NAME_KEY: " ".join(name), PRICE_KEY: Decimal(price), QUANTITY_KEY: int(quantity)}
+            fields = {
+                NAME_KEY: " ".join(name),
+                PRICE_KEY: Decimal(price),
+                QUANTITY_KEY: int(quantity),
+            }
             print_result(update_product(storage, product_names, id, fields))
             return True
 

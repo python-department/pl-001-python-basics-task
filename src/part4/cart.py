@@ -9,11 +9,9 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
-from .storage import (  # noqa: F401
-    NAME_KEY,
-    PRICE_KEY,
+from .storage import (
     QUANTITY_KEY,
+    Product,
 )
 
 
@@ -48,19 +46,21 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    if product_id not in storage.keys():
+    if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
     if quantity > storage[product_id][QUANTITY_KEY]:
-        print(f"not enough stock for product {product_id}: {storage[product_id][QUANTITY_KEY]} available, {quantity} requested")
+        print(
+            f"not enough stock for product {product_id}: {storage[product_id][QUANTITY_KEY]} available, {quantity} requested"
+        )
         return None
 
-    storage[product_id][QUANTITY_KEY] -=quantity
+    storage[product_id][QUANTITY_KEY] -= quantity
     if product_id not in cart:
         cart[product_id] = quantity
     else:
         cart[product_id] += quantity
-    
+
     return cart[product_id]
 
 
@@ -101,13 +101,15 @@ def remove_from_cart(
         print(f"product {product_id} is not in the cart")
         return None
     if cart[product_id] < quantity:
-        print(f"cart holds only {cart[product_id]} unit(s) of product {product_id}, cannot remove {quantity}")
+        print(
+            f"cart holds only {cart[product_id]} unit(s) of product {product_id}, cannot remove {quantity}"
+        )
         return None
-    if product_id not in product_names:
+    if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
 
-    storage[product_id][QUANTITY_KEY] +=quantity
+    storage[product_id][QUANTITY_KEY] += quantity
     cart[product_id] -= quantity
     if not cart[product_id]:
         del cart[product_id]
