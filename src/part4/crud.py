@@ -36,13 +36,7 @@ from .utils import normalize_price, normalize_product_name  # noqa: F401
 
 
 def generate_product_id() -> str:
-    """Generate an identifier for a new product.
-
-    Returns:
-        A freshly generated UUID, stringified.
-    """
-    # TODO: реализуйте функцию
-    return ""
+   return str(uuid.uuid4())
 
 
 def create_product(
@@ -50,31 +44,23 @@ def create_product(
     product_names: set[str],
     fields: dict[str, Any],
 ) -> str | None:
-    """Add a new product to ``storage`` and return its new identifier.
+    name = normalize_product_name(fields[NAME_KEY])
+    if not name:
+        print("product name must not be blank")
+        return None
+    if name in product_names:
+        print(f"product name '{name}' is already taken")
+        return None
 
-    Args:
-        storage: The product store to add to; modified in place on
-            success.
-        product_names: The normalised names already in ``storage``; the
-            new name is added to it in place on success.
-        fields: A dictionary with the ``name``, ``price`` and ``quantity``
-            keys (see :data:`~src.part4.storage.NAME_KEY`,
-            :data:`~src.part4.storage.PRICE_KEY` and
-            :data:`~src.part4.storage.QUANTITY_KEY`) describing the
-            product. ``name`` is normalised (surrounding whitespace
-            stripped, lower-cased) before it is stored or compared.
-            ``price`` is a :class:`~decimal.Decimal` amount and is rounded
-            to the stored money precision before it is saved.
 
-    Returns:
-        The identifier generated for the new product, or ``None`` when
-        ``name`` is blank once normalised or a product with the same
-        normalised name already exists. In the ``None`` case ``storage``
-        and ``product_names`` are left unchanged and an explanatory
-        message is printed.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    product_id = generate_product_id()
+    storage[product_id] = {
+        NAME_KEY: name,
+        PRICE_KEY: normalize_price(fields[PRICE_KEY]),
+        QUANTITY_KEY: fields[QUANTITY_KEY],
+    }
+    product_names.add(name)
+    return product_id
 
 
 def read_product(storage: dict[str, Product], product_id: str) -> Product | None:
