@@ -49,7 +49,7 @@ def add_to_cart(
     """
     product = read_product(storage, product_id)
 
-    if not product:
+    if product is None:
         return None
 
     if product[QUANTITY_KEY] < quantity:

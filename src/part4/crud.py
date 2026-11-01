@@ -44,6 +44,20 @@ def generate_product_id() -> str:
     return str(uuid.uuid4())
 
 
+def _validate_name(
+    name: str,
+    product_names: set[str],
+    current_name: str | None = None,
+) -> bool:
+    if not name:
+        print("product name must not be blank")
+        return False
+    if name != current_name and name in product_names:
+        print(f"product name '{name}' is already taken")
+        return False
+    return True
+
+
 def create_product(
     storage: dict[str, Product],
     product_names: set[str],
@@ -74,12 +88,7 @@ def create_product(
     """
     normalized_name = normalize_product_name(fields[NAME_KEY])
 
-    if not normalized_name:
-        print("product name must not be blank")
-        return None
-
-    if normalized_name in product_names:
-        print(f"product name '{normalized_name}' is already taken")
+    if not _validate_name(normalized_name, product_names):
         return None
 
     product_id = generate_product_id()
@@ -105,7 +114,7 @@ def read_product(storage: dict[str, Product], product_id: str) -> Product | None
         that identifier (a message is printed in that case).
     """
     record = storage.get(product_id)
-    if not record:
+    if record is None:
         print(f"no product with id {product_id}")
     return record
 
@@ -148,23 +157,16 @@ def update_product(
         own current name is allowed.
     """
     record = read_product(storage, product_id)
-    if not record:
+    if record is None:
         return None
 
     new_record: Product = {}
     for key in [NAME_KEY, PRICE_KEY, QUANTITY_KEY]:
-        new_record[key] = record[key] if fields.get(key) is None else fields.get(key)
+        new_record[key] = fields[key] if key in fields else record[key]
     new_record[NAME_KEY] = normalize_product_name(new_record[NAME_KEY])
     new_record[PRICE_KEY] = normalize_price(new_record[PRICE_KEY])
 
-    if not new_record[NAME_KEY]:
-        print("product name must not be blank")
-        return None
-    if (
-        new_record[NAME_KEY] != record[NAME_KEY]
-        and new_record[NAME_KEY] in product_names
-    ):
-        print(f"product name '{new_record[NAME_KEY]}' is already taken")
+    if not _validate_name(new_record[NAME_KEY], product_names, record[NAME_KEY]):
         return None
 
     if record[NAME_KEY] != new_record[NAME_KEY]:
@@ -202,9 +204,9 @@ def delete_product(
         are left unchanged and a message is printed).
     """
     record = read_product(storage, product_id)
-    if not record:
+    if record is None:
         return None
 
     storage.pop(product_id)
-    product_names.remove(record[NAME_KEY])
+    product_names.discard(record[NAME_KEY])
     return product_id
