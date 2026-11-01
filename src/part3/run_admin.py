@@ -1,34 +1,3 @@
-"""Interactive admin console for the part3 in-memory product store.
-
-Running this module starts a read-eval-print loop over a single product
-store that lives in memory for the lifetime of the process. Every line
-typed at the prompt is stripped of surrounding whitespace and matched
-against the set of known commands:
-
-* ``help`` -- print the list of commands and what each one does;
-* ``exit`` -- leave the loop and end the program;
-* ``show`` -- print the whole store as a text table;
-* ``create <name...> <price> <quantity>`` -- add a product;
-* ``read <id>`` -- print one product;
-* ``update <id> <name...> <price> <quantity>`` -- overwrite a product;
-* ``delete <id>`` -- remove a product.
-
-For ``create`` and ``update`` the price and quantity are always the last
-two words of the line; everything between the verb (and, for ``update``,
-the id) and those two words is joined with single spaces into the
-product name, so a multi-word name such as ``Gibson SG Junior`` needs no
-quoting.
-
-The four CRUD commands forward to :mod:`src.part3.crud`; whatever
-that call returns is printed unless it is ``None``. A line whose first
-word is not a known verb, or that carries the wrong number of arguments
-for its verb, prints an "is not a command" notice. A line that names a
-command correctly but whose id, price or quantity argument will not
-parse prints a distinct "arguments are invalid" notice. Either way the
-store is left untouched and the loop keeps running; only ``exit`` stops
-it.
-"""
-
 from decimal import Decimal, InvalidOperation
 from typing import Final
 
