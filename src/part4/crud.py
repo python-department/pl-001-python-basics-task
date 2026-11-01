@@ -87,7 +87,7 @@ def create_product(
     quantity = fields[QUANTITY_KEY]
 
     storage[product_id] = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
-    product_names.add(product_names)
+    product_names.add(name)
 
     return product_id
 

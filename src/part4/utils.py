@@ -87,7 +87,7 @@ def in_storage(
     return True
 
 
-def get_storage_str_representation(storage: dict[Product]) -> str:
+def get_storage_str_representation(storage: dict[str, Product]) -> str:
     """Render the product store as a text table with data-sized columns.
 
     The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
