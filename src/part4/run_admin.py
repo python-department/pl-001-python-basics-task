@@ -42,8 +42,19 @@ from .utils import get_storage_str_representation  # noqa: F401
 
 
 # TODO: задайте приглашение и текст справки (используйте своё решение части 3)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+    help                                       show this message
+    exit                                       leave the console
+    show                                       print the whole store as a table
+    create <name...> <price> <quantity>        add a product, print its new id
+    read <id>                                  print the product with that id
+    update <id> <name...> <price> <quantity>   overwrite that product's fields
+    delete <id>                                remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
@@ -53,7 +64,7 @@ def show_help() -> None:
     is: a heading, one line per command with a short description, and a
     note on how multi-word names are parsed.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
@@ -65,6 +76,8 @@ def print_result(result: object) -> None:
             printed in that case.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
+    if result is not None:
+        print(result)
 
 
 def run_command(
@@ -92,7 +105,45 @@ def run_command(
             ``update`` does not parse as a decimal number.
     """
     # TODO: реализуйте функцию
-    return False
+    words = line.split()
+
+    if not words:
+        print(f"{line!r} is not a command")
+        return True
+
+    command = words[0]
+    args = words[1:]
+    args_count = len(args)
+
+    if command == "help" and args_count == 0:
+        show_help()
+    elif command == "exit" and args_count == 0:
+        return False
+    elif command == "show" and args_count == 0:
+        print(get_storage_str_representation(storage))
+    elif command == "create" and args_count >= 3:
+        name = " ".join(args[:-2])
+        price = Decimal(args[-2])
+        quantity = int(args[-1])
+        fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
+        print_result(create_product(storage, product_names, fields))
+    elif command == "read" and args_count == 1:
+        print_result(read_product(storage, args[0]))
+    elif command == "update" and args_count >= 4:
+        product_id = args[0]
+        name = " ".join(args[1:-2])
+        price = Decimal(args[-2])
+        quantity = int(args[-1])
+        fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
+        print_result(
+            update_product(storage, product_names, product_id, fields)
+        )
+    elif command == "delete" and args_count == 1:
+        print_result(delete_product(storage, product_names, args[0]))
+    else:
+        print(f"{line!r} is not a command")
+
+    return True
 
 
 def main() -> None:

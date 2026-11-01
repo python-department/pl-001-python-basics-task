@@ -123,7 +123,7 @@ def generate_snowflake_id(
         return None
     time_ms = read_current_millis(epoch_ms)
     if time_ms > TIMESTAMP_MS_MAX:
-        print("Timestaps overflows")
+        print("Timestamp overflows")
         return None
     return (
         (time_ms << (NODE_ID_BITS + SEQUENCE_ID_BITS))

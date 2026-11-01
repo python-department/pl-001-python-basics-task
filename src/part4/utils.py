@@ -33,14 +33,14 @@ from .storage import (  # noqa: F401
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 3)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 3)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -54,7 +54,7 @@ def normalize_price(price: Decimal) -> Decimal:
         with halves rounded up.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -72,7 +72,7 @@ def normalize_product_name(name: str) -> str:
         whitespace.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    return " ".join(name.split()).lower()
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -97,4 +97,32 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         returned, sized to the header labels.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    rows = []
+    for product_id, product in storage.items():
+        rows.append(
+            [
+                str(product_id),
+                str(product[NAME_KEY]),
+                str(product[PRICE_KEY]),
+                str(product[QUANTITY_KEY]),
+            ]
+        )
+    widths = [len(header) for header in TABLE_HEADERS]
+    for row in rows:
+        for index, cell in enumerate(row):
+            widths[index] = max(widths[index], len(cell))
+
+    lines = []
+    header_cells = [
+        f" {header:<{widths[index]}} " for index, header in enumerate(TABLE_HEADERS)
+    ]
+    lines.append("|" + "|".join(header_cells) + "|")
+
+    separator = ["-" * (column_width + 2) for column_width in widths]
+    lines.append("|" + "|".join(separator) + "|")
+
+    for row in rows:
+        cells = [f" {cell:<{widths[index]}} " for index, cell in enumerate(row)]
+        lines.append("|" + "|".join(cells) + "|")
+
+    return "\n".join(lines)
