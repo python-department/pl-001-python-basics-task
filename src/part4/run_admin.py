@@ -5,6 +5,7 @@ from .crud import create_product, delete_product, read_product, update_product
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import get_storage_str_representation
 
+
 PROMPT: Final = "admin> "
 HELP_TEXT: Final = (
     "Available commands:\n"
