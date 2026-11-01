@@ -14,7 +14,9 @@ def add_to_cart(
 
     available = storage[product_id][QUANTITY_KEY]
     if available < quantity:
-        print(f"not enough stock for product {product_id}: {available} available, {quantity} requested")
+        print(
+            f"not enough stock for product {product_id}: {available} available, {quantity} requested"
+        )
         return None
 
     storage[product_id][QUANTITY_KEY] -= quantity
@@ -35,7 +37,9 @@ def remove_from_cart(
 
     in_cart = cart[product_id]
     if in_cart < quantity:
-        print(f"cart holds only {in_cart} unit(s) of product {product_id}, cannot remove {quantity}")
+        print(
+            f"cart holds only {in_cart} unit(s) of product {product_id}, cannot remove {quantity}"
+        )
         return None
 
     if product_id not in storage:
