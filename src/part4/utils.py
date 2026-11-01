@@ -19,7 +19,7 @@ Presentation:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Final
+from typing import Any, Final
 
 from .storage import (
     NAME_KEY,
@@ -90,7 +90,7 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         for header in TABLE_HEADERS[1:]:
             width[header] = max(width[header], len(str(product[header])))
 
-    def _row(cells) -> str:
+    def _row(cells: list[Any]) -> str:
         return (
             "".join(
                 f"| {cell:<{width[header]}} "
