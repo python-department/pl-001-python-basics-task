@@ -41,7 +41,7 @@ def generate_product_id() -> str:
     Returns:
         A freshly generated UUID, stringified.
     """
-    
+
     return str(uuid.uuid4())
 
 
