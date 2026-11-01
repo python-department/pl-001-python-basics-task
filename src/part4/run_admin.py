@@ -135,9 +135,7 @@ def run_command(
         price = Decimal(args[-2])
         quantity = int(args[-1])
         fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
-        print_result(
-            update_product(storage, product_names, product_id, fields)
-        )
+        print_result(update_product(storage, product_names, product_id, fields))
     elif command == "delete" and args_count == 1:
         print_result(delete_product(storage, product_names, args[0]))
     else:

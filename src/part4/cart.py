@@ -46,7 +46,7 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    
+
     if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
@@ -99,7 +99,7 @@ def remove_from_cart(
         (zero means the product was dropped from the cart), or ``None`` when
         the cart does not hold the product or holds too few units.
     """
-    
+
     if product_id not in cart:
         print(f"product {product_id} is not in the cart")
         return None

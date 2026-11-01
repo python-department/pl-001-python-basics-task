@@ -41,7 +41,7 @@ def generate_product_id() -> str:
     Returns:
         A freshly generated UUID, stringified.
     """
-   
+
     return str(uuid.uuid4())
 
 
@@ -73,7 +73,7 @@ def create_product(
         and ``product_names`` are left unchanged and an explanatory
         message is printed.
     """
-    
+
     raw_name = fields[NAME_KEY]
     normalized_name = normalize_product_name(raw_name)
 
@@ -117,6 +117,7 @@ def read_product(storage: dict[str, Product], product_id: str) -> Product | None
         return None
     return storage[product_id]
 
+
 def update_product(
     storage: dict[str, Product],
     product_names: set[str],
@@ -154,7 +155,7 @@ def update_product(
         and an explanatory message is printed. Renaming a product to its
         own current name is allowed.
     """
-    
+
     if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
@@ -212,7 +213,7 @@ def delete_product(
         product carried that identifier (``storage`` and ``product_names``
         are left unchanged and a message is printed).
     """
-    
+
     if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
