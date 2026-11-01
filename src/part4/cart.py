@@ -99,7 +99,7 @@ def remove_from_cart(
     if product_id not in cart:
         print(f"product {product_id} is not in the cart")
         return None
-    
+
     in_cart = cart[product_id]
     if in_cart < quantity:
         print(

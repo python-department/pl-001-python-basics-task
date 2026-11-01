@@ -109,7 +109,7 @@ def run_command(
     parts = line.split()
     if not parts:
         return True
-        
+
     command = parts[0]
 
     match command:
@@ -136,7 +136,7 @@ def run_command(
             name = " ".join(parts[1:-2])
             price = Decimal(parts[-2])
             quantity = int(parts[-1])
-            
+
             fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
             result = create_product(storage, product_names, fields)
             print_result(result)
@@ -148,15 +148,14 @@ def run_command(
             name = " ".join(parts[2:-2])
             price = Decimal(parts[-2])
             quantity = int(parts[-1])
-            
+
             fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
             updated = update_product(storage, product_names, product_id, fields)
             print_result(updated)
         case _:
             print(f"'{line}' is not a command")
-            
+
     return True
-    
 
 
 def main() -> None:

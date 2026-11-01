@@ -99,12 +99,14 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
     # TODO: реализуйте функцию (используйте своё решение части 3)
     rows_data = []
     for product_id, product in storage.items():
-        rows_data.append((
-            str(product_id),
-            str(product[NAME_KEY]),
-            str(product[PRICE_KEY]),
-            str(product[QUANTITY_KEY])
-        ))
+        rows_data.append(
+            (
+                str(product_id),
+                str(product[NAME_KEY]),
+                str(product[PRICE_KEY]),
+                str(product[QUANTITY_KEY]),
+            )
+        )
     widths = [len(header) for header in TABLE_HEADERS]
     for row in rows_data:
         for i, cell in enumerate(row):
@@ -112,7 +114,7 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
 
     header_cells = [f"{header:<{widths[i]}}" for i, header in enumerate(TABLE_HEADERS)]
     header_line = "| " + " | ".join(header_cells) + " |"
-    
+
     separator_cells = ["-" * (widths[i] + 2) for i in range(len(TABLE_HEADERS))]
     separator_line = "|" + "|".join(separator_cells) + "|"
 
@@ -123,4 +125,3 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
 
     result_lines = [header_line, separator_line] + data_lines
     return "\n".join(result_lines)
-    

@@ -107,7 +107,6 @@ def read_product(storage: dict[str, Product], product_id: str) -> Product | None
         print(f"no product with id {product_id}")
         return None
     return storage[product_id]
-    
 
 
 def update_product(
@@ -167,7 +166,7 @@ def update_product(
         storage[product_id][NAME_KEY] = new_name
     if PRICE_KEY in fields:
         storage[product_id][PRICE_KEY] = normalize_price(fields[PRICE_KEY])
-    
+
     if QUANTITY_KEY in fields:
         storage[product_id][QUANTITY_KEY] = fields[QUANTITY_KEY]
 
@@ -198,9 +197,8 @@ def delete_product(
     if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
-    
+
     name = storage[product_id][NAME_KEY]
     product_names.remove(name)
     del storage[product_id]
     return product_id
-    
