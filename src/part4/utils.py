@@ -18,10 +18,10 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
@@ -33,14 +33,14 @@ from .storage import (  # noqa: F401
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 3)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 3)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -54,7 +54,7 @@ def normalize_price(price: Decimal) -> Decimal:
         with halves rounded up.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -72,10 +72,34 @@ def normalize_product_name(name: str) -> str:
         whitespace.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    return " ".join(name.split()).lower()
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
+def rows_separator(widths: list[int]) -> str:
+    dash_runs = ["-" * (width + 2) for width in widths]
+    return "|" + "|".join(dash_runs) + "|"
+
+
+def formatted_row(cells: list[str], widths: list[int]) -> str:
+    formatted_res_row = []
+    for i in range(len(cells)):
+        formatted_res_row.append(
+            cells[i].ljust(widths[i])
+        )  # дополнение справа пробелами
+    return "| " + " | ".join(formatted_res_row) + " |"
+
+
+def column_width(rows: list[list[str]]) -> list[int]:  # поиск самой длинной ячейки
+    widths = []
+    column_count = len(rows[0])
+    for j in range(column_count):
+        max_width = 0
+        for row in rows:
+            cell = row[j]
+            max_width = max(max_width, len(cell))
+        widths.append(max_width)
+    return widths
 
 
 def get_storage_str_representation(storage: dict[str, Product]) -> str:
@@ -97,4 +121,22 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         returned, sized to the header labels.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    rows: list[list[str]] = []
+    rows.append(list(TABLE_HEADERS))
+    for product_id, product in storage.items():
+        rows.append(
+            [
+                str(product_id),
+                str(product[NAME_KEY]),
+                str(product[PRICE_KEY]),
+                str(product[QUANTITY_KEY]),
+            ]
+        )
+    widths = column_width(rows)
+    table_lines = [
+        formatted_row(rows[0], widths),
+        rows_separator(widths),
+    ]
+    for row in rows[1:]:
+        table_lines.append(formatted_row(row, widths))
+    return "\n".join(table_lines)
