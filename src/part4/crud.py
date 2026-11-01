@@ -111,20 +111,10 @@ def delete_product(
     product_names: set[str],
     product_id: str,
 ) -> str | None:
-    """Remove the product stored under ``product_id`` from ``storage``.
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
 
-    Args:
-        storage: The product store to remove from; modified in place on
-            success.
-        product_names: The normalised names already in ``storage``; the
-            departing product's name is removed from it in place on
-            success.
-        product_id: The identifier of the product to remove.
-
-    Returns:
-        ``product_id`` when a product was removed, or ``None`` when no
-        product carried that identifier (``storage`` and ``product_names``
-        are left unchanged and a message is printed).
-    """
-    # TODO: реализуйте функцию
-    return ""
+    product = storage.pop(product_id)
+    product_names.discard(product[NAME_KEY])
+    return product_id
