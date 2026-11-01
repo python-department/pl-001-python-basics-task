@@ -9,7 +9,7 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
+from .storage import Product, QUANTITY_KEY
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -22,32 +22,21 @@ def add_to_cart(
     product_id: str,
     quantity: int,
 ) -> int | None:
-    """Move ``quantity`` units of ``product_id`` from the store into ``cart``.
+   if product_id not in storage:
+       print(f"no product with id {product_id}")
+       return None
 
-    The product is looked up in ``storage``. If it is missing, a message is
-    printed and nothing changes. If the store holds fewer units than
-    requested, an explanatory message is printed and nothing changes.
-    Otherwise the store record is decremented by ``quantity`` and the cart
-    gains ``quantity`` units of ``product_id`` -- the product is added when
-    the cart had none of it.
+   product = storage[product_id]
+   if product[QUANTITY_KEY] < quantity:
+       print(
+           f"not enough stock for product {product_id}: "
+           f"{product[QUANTITY_KEY]} available, {quantity} requested"
+       )
+       return None
 
-    Args:
-        storage: The product store to draw stock from; modified in place on
-            success.
-        product_names: The normalised names in ``storage``; a
-            quantity-only change never renames a product, so it is left
-            unchanged here.
-        cart: The cart to add the units to; modified in place on success.
-        product_id: The identifier of the product to add.
-        quantity: Number of units to move into the cart.
-
-    Returns:
-        The quantity of ``product_id`` in the cart after the addition, or
-        ``None`` when the product is unknown or the store cannot cover the
-        request.
-    """
-    # TODO: реализуйте функцию
-    return 0
+   product[QUANTITY_KEY] -= quantity
+   cart[product_id] = cart.get(product_id, 0) + quantity
+   return cart[product_id]
 
 
 def remove_from_cart(
