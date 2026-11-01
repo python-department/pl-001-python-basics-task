@@ -33,3 +33,8 @@ avoid-escape = true
 [tool.ruff.lint.isort]
 lines-after-imports = 2
 split-on-trailing-comma = true
+
+[tool.mypy]
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
