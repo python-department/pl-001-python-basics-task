@@ -81,16 +81,16 @@ def create_product(
         return None
 
     # Very small chance, but never zero
-    while (id := generate_product_id()) in storage:
+    while (product_id := generate_product_id()) in storage:
         continue
 
-    storage[id] = {
+    storage[product_id] = {
         NAME_KEY: normalized_name,
         PRICE_KEY: normalize_price(fields[PRICE_KEY]),
         QUANTITY_KEY: fields[QUANTITY_KEY],
     }
     product_names.add(normalized_name)
-    return id
+    return product_id
 
 
 def read_product(storage: dict[str, Product], product_id: str) -> Product | None:

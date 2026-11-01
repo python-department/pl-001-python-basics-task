@@ -29,7 +29,7 @@ is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
 from decimal import Decimal, InvalidOperation
-from typing import Final
+from typing import Any, Final
 
 from .crud import (
     create_product,
@@ -78,6 +78,32 @@ def print_result(result: object) -> None:
         print(result)
 
 
+def build_fields(name_words: list[str], price: str, quantity: str) -> dict[str, Any]:
+    """Assemble the fields dictionary a create/update CRUD call receives.
+
+    Args:
+        name_words: The words making up the product name; joined with a
+            single space, exactly as the console parses them.
+        price: The price argument; parsed as a decimal number.
+        quantity: The quantity argument; parsed as a base-10 integer.
+
+    Returns:
+        The ``{NAME_KEY: name, PRICE_KEY: Decimal, QUANTITY_KEY: int}``
+        dictionary forwarded to :func:`src.part4.crud.create_product`
+        or :func:`src.part4.crud.update_product`.
+
+    Raises:
+        ValueError: If ``quantity`` does not parse as a base-10 integer.
+        decimal.InvalidOperation: If ``price`` does not parse as a
+            decimal number.
+    """
+    return {
+        NAME_KEY: " ".join(name_words),
+        PRICE_KEY: Decimal(price),
+        QUANTITY_KEY: int(quantity),
+    }
+
+
 def run_command(
     storage: dict[str, Product], product_names: set[str], line: str
 ) -> bool:
@@ -114,12 +140,12 @@ def run_command(
             print_result(get_storage_str_representation(storage))
             return True
 
-        case ["read", id]:
-            print_result(read_product(storage, id))
+        case ["read", product_id]:
+            print_result(read_product(storage, product_id))
             return True
 
-        case ["delete", id]:
-            print_result(delete_product(storage, product_names, id))
+        case ["delete", product_id]:
+            print_result(delete_product(storage, product_names, product_id))
             return True
 
         case ["create", *name, price, quantity]:
@@ -127,25 +153,26 @@ def run_command(
                 print(f"'{line}' is not a command")
                 return True
 
-            fields = {
-                NAME_KEY: " ".join(name),
-                PRICE_KEY: Decimal(price),
-                QUANTITY_KEY: int(quantity),
-            }
-            print_result(create_product(storage, product_names, fields))
+            print_result(
+                create_product(
+                    storage, product_names, build_fields(name, price, quantity)
+                )
+            )
             return True
 
-        case ["update", id, *name, price, quantity]:
+        case ["update", product_id, *name, price, quantity]:
             if not name:
                 print(f"'{line}' is not a command")
                 return True
 
-            fields = {
-                NAME_KEY: " ".join(name),
-                PRICE_KEY: Decimal(price),
-                QUANTITY_KEY: int(quantity),
-            }
-            print_result(update_product(storage, product_names, id, fields))
+            print_result(
+                update_product(
+                    storage,
+                    product_names,
+                    product_id,
+                    build_fields(name, price, quantity),
+                )
+            )
             return True
 
         case _:

@@ -19,7 +19,7 @@ Presentation:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Final
+from typing import Any, Final
 
 from .storage import (
     ID_KEY,
@@ -74,24 +74,55 @@ def normalize_product_name(name: str) -> str:
     return normalized_name
 
 
-def get_line_separator(storage_column_lengths: dict[str, int]) -> str:
-    """Принимает словарь с названиями столбцов и их длинами и возвращает строку-разделитель
-    вида |------|------|-----|-----|
+def get_max_column_length(storage: dict[str, Product], key: str) -> int:
+    """Measure the widest table cell a record can hold for one field.
+
+    Args:
+        storage: The product store to measure.
+        key: The name of the record field to measure.
+
+    Returns:
+        The character length of the longest of the column header ``key``
+        and ``str`` of every value stored under ``key`` in ``storage``, so
+        the result is never shorter than the header itself.
     """
-    dashes = [
-        f"{'-' * (length + 2)}" for length in storage_column_lengths.values()
-    ]  # +2 чтобы учесть пробелы: | ID | name |...
-    separator = f"|{'|'.join(dashes)}|"
-    return separator
-
-
-def get_max_column_lenght(storage: dict[str, Product], KEY: str) -> int:
-    """Принимает storage и возвращает длину максимального элемента из всех Product"""
-    values = [len(KEY)]
-    for product_dict in storage.values():  # product_dict: dict[str, Any]
-        values.append(len(str(product_dict[KEY])))
+    values = [len(key)]
+    for record in storage.values():
+        values.append(len(str(record[key])))
 
     return max(values)
+
+
+def get_line_separator(column_lengths: dict[str, int]) -> str:
+    """Build the dashed separator row of the store table.
+
+    Args:
+        column_lengths: The table column names and their widths.
+
+    Returns:
+        A string of the form ``|----|------|`` where each dash run is
+        exactly two characters (the surrounding padding spaces) wider
+        than the column it belongs to.
+    """
+    dashes = [f"{'-' * (length + 2)}" for length in column_lengths.values()]
+
+    return f"|{'|'.join(dashes)}|"
+
+
+def format_row(cells: dict[str, Any], column_lengths: dict[str, int]) -> str:
+    """Render one store-table row with each cell padded to its column width.
+
+    Args:
+        cells: The row cells keyed by column name, in the exact column
+            order the row must be printed in.
+        column_lengths: The table column names and their widths.
+
+    Returns:
+        The row as a string: every cell is left-justified and padded to
+        its column width, wrapped in a single space and separated by
+        ``|``, with ``|`` at both ends of the row.
+    """
+    return f"|{'|'.join(f' {cell!s:<{column_lengths[header]}} ' for header, cell in cells.items())}|"
 
 
 def get_storage_str_representation(storage: dict[str, Product]) -> str:
@@ -112,49 +143,28 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    storage_column_lengths = {}  # dict с длинами для каждого столбца
-    for key in TABLE_HEADERS:
-        match key:
-            case _header if _header == ID_KEY:
-                storage_column_lengths[ID_KEY] = max(
-                    [len(ID_KEY)] + [len(storage_key) for storage_key in storage]
-                )
+    column_lengths = {
+        ID_KEY: max([len(ID_KEY)] + [len(product_id) for product_id in storage]),
+        NAME_KEY: get_max_column_length(storage, NAME_KEY),
+        PRICE_KEY: get_max_column_length(storage, PRICE_KEY),
+        QUANTITY_KEY: get_max_column_length(storage, QUANTITY_KEY),
+    }
+    lines = [
+        format_row({header: header for header in TABLE_HEADERS}, column_lengths),
+        get_line_separator(column_lengths),
+    ]
 
-            case _header if _header == NAME_KEY:
-                storage_column_lengths[NAME_KEY] = get_max_column_lenght(
-                    storage, NAME_KEY
-                )
+    for product_id, record in storage.items():
+        lines.append(
+            format_row(
+                {
+                    ID_KEY: product_id,
+                    NAME_KEY: record[NAME_KEY],
+                    PRICE_KEY: record[PRICE_KEY],
+                    QUANTITY_KEY: record[QUANTITY_KEY],
+                },
+                column_lengths,
+            )
+        )
 
-            case _header if _header == PRICE_KEY:
-                storage_column_lengths[PRICE_KEY] = get_max_column_lenght(
-                    storage, PRICE_KEY
-                )
-
-            case _header if _header == QUANTITY_KEY:
-                storage_column_lengths[QUANTITY_KEY] = get_max_column_lenght(
-                    storage, QUANTITY_KEY
-                )
-
-    headers = [f" {key:<{value}} " for key, value in storage_column_lengths.items()]
-    table = f"|{'|'.join(headers)}|\n{get_line_separator(storage_column_lengths)}"
-
-    for _id, product_dict in storage.items():
-        row = [f" {_id:<{storage_column_lengths[ID_KEY]}} "]
-        for key in product_dict:
-            match key:
-                case _header if _header == NAME_KEY:
-                    row.append(
-                        f" {product_dict[NAME_KEY]!s:<{storage_column_lengths[NAME_KEY]}} "
-                    )
-                case _header if _header == PRICE_KEY:
-                    row.append(
-                        f" {product_dict[PRICE_KEY]!s:<{storage_column_lengths[PRICE_KEY]}} "
-                    )
-                case _header if _header == QUANTITY_KEY:
-                    row.append(
-                        f" {product_dict[QUANTITY_KEY]!s:<{storage_column_lengths[QUANTITY_KEY]}} "
-                    )
-
-        table += f"\n|{'|'.join(row)}|"
-
-    return table
+    return "\n".join(lines)
