@@ -62,7 +62,7 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    return " ".join(x for x in name.strip().lower().split())
+    return " ".join(name.lower().split())
 
 
 def get_storage_str_representation(storage: dict[str, Product]) -> str:
@@ -84,13 +84,13 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         returned, sized to the header labels.
     """
 
-    width = {header : len(header) for header in TABLE_HEADERS}
+    width = {header: len(header) for header in TABLE_HEADERS}
     for key, product in storage.items():
         width[TABLE_HEADERS[0]] = max(width[TABLE_HEADERS[0]], len(key))
         for header in TABLE_HEADERS[1:]:
             width[header] = max(width[header], len(str(product[header])))
 
-    def _row(cells: list[str]) -> str:
+    def _row(cells) -> str:
         return (
             "".join(
                 f"| {cell:<{width[header]}} "
@@ -102,15 +102,13 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
     separator = (
         "".join(f"|{'-' * (width[header] + 2)}" for header in TABLE_HEADERS) + "|"
     )
-    
+
     return "\n".join(
         [
             _row(list(TABLE_HEADERS)),
-            
             separator,
-            
             *(
-                _row([key] + [x for x in product.values()])
+                _row([key] + [product[h] for h in TABLE_HEADERS[1:]])
                 for key, product in storage.items()
             ),
         ]

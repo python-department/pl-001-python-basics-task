@@ -9,10 +9,11 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+from .crud import read_product, update_product
+from .storage import (
+    QUANTITY_KEY,
+    Product,
+)
 
 
 def add_to_cart(
@@ -46,8 +47,24 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    # TODO: реализуйте функцию
-    return 0
+    product = read_product(storage, product_id)
+
+    if not product:
+        return None
+
+    if product[QUANTITY_KEY] < quantity:
+        print(
+            f"not enough stock for product {product_id}: "
+            f"{product[QUANTITY_KEY]} available, {quantity} requested"
+        )
+        return None
+
+    new_quantity = product[QUANTITY_KEY] - quantity
+    update_product(storage, product_names, product_id, {QUANTITY_KEY: new_quantity})
+
+    cart[product_id] = cart.get(product_id, 0) + quantity
+
+    return cart[product_id]
 
 
 def remove_from_cart(
@@ -83,5 +100,33 @@ def remove_from_cart(
         (zero means the product was dropped from the cart), or ``None`` when
         the cart does not hold the product or holds too few units.
     """
-    # TODO: реализуйте функцию
-    return 0
+
+    cart_quantity = cart.get(product_id)
+    if cart_quantity is None:
+        print(f"product {product_id} is not in the cart")
+        return None
+
+    if cart_quantity < quantity:
+        print(
+            f"cart holds only {cart_quantity} unit(s) of product {product_id}, "
+            f"cannot remove {quantity}"
+        )
+        return None
+
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    new_quantity = cart[product_id] - quantity
+    cart[product_id] = new_quantity
+    update_product(
+        storage,
+        product_names,
+        product_id,
+        {QUANTITY_KEY: product[QUANTITY_KEY] + quantity},
+    )
+
+    if new_quantity == 0:
+        cart.pop(product_id)
+
+    return new_quantity
