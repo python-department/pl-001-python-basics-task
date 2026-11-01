@@ -64,19 +64,10 @@ def create_product(
 
 
 def read_product(storage: dict[str, Product], product_id: str) -> Product | None:
-    """Return the product stored under ``product_id``.
-
-    Args:
-        storage: The product store to search.
-        product_id: The identifier to look up.
-
-    Returns:
-        The matching product record, or ``None`` when no product carries
-        that identifier (a message is printed in that case).
-    """
-    # TODO: реализуйте функцию
-    return {}
-
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    return storage[product_id]
 
 def update_product(
     storage: dict[str, Product],
