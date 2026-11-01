@@ -14,13 +14,13 @@ is already taken.
 
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price  # noqa: F401
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -34,8 +34,13 @@ def generate_product_id(storage: list[Product]) -> int:
         :data:`~src.part2.storage.PRODUCT_ID_MIN` when ``storage`` is
         empty.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if len(storage) == 0:
+        return PRODUCT_ID_MIN
+
+    max_id: int = 0
+    for product in storage:
+        max_id = max(product[PRODUCT_ID_INDEX], max_id)
+    return max_id + 1
 
 
 def create_product(
@@ -56,8 +61,18 @@ def create_product(
         ``storage`` is left unchanged and a message naming the clashing
         name is printed.
     """
-    # TODO: реализуйте функцию
-    return 0
+    name, price, quantity = fields
+
+    for product in storage:
+        if name == product[NAME_INDEX]:
+            print(f"product name '{name}' is already taken")
+            return None
+
+    new_id = generate_product_id(storage)
+    new_price = normalize_price(price)
+    new_product_tuple = (new_id, name, new_price, quantity)
+    storage.append(new_product_tuple)
+    return new_id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -72,8 +87,12 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
         ``None`` when no product carries that identifier (a message is
         printed in that case).
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    for product in storage:
+        if product_id == product[PRODUCT_ID_INDEX]:
+            return product
+
+    print(f"no product with id {product_id}")
+    return None
 
 
 def update_product(
@@ -99,8 +118,17 @@ def update_product(
         ``None`` when no product carries that identifier (``storage`` is
         left unchanged and a message is printed).
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    name, price, quantity = fields
+    new_price = normalize_price(price)
+    new_product: Product = (product_id, name, new_price, quantity)
+
+    for product_index in range(len(storage)):
+        if product_id == storage[product_index][PRODUCT_ID_INDEX]:
+            storage[product_index] = new_product
+            return new_product
+
+    print(f"no product with id {product_id}")
+    return None
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -116,5 +144,10 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         product carried that identifier (``storage`` is left unchanged and
         a message is printed).
     """
-    # TODO: реализуйте функцию
-    return 0
+    for product_index in range(len(storage)):
+        if product_id == storage[product_index][PRODUCT_ID_INDEX]:
+            storage.pop(product_index)
+            return product_id
+
+    print(f"no product with id {product_id}")
+    return None
