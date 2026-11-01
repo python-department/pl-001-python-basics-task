@@ -8,6 +8,7 @@ from .storage import (
     Product,
 )
 
+
 PRICE_PRECISION: Final[int] = 2
 PRICE_STEP: Final = Decimal("0.01")
 TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
