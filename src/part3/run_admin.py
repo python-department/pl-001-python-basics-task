@@ -1,16 +1,16 @@
-from decimal import Decimal, InvalidOperation 
+from decimal import Decimal
 from typing import Final
 
-from crud import ( 
+from crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
 from storage import Product
-from utils import get_storage_str_representation 
+from utils import get_storage_str_representation
 
- 
+
 PROMPT: Final[str] = "admin> "
 HELP_TEXT: Final[str] = """Available commands:
   help                                       show this message
@@ -31,8 +31,8 @@ def show_help() -> None:
 
 
 def print_result(result: object) -> None:
-    if result: print (result)
-
+    if result:
+        print(result)
 
 
 def run_command(storage: list[Product], line: str) -> bool:
@@ -46,37 +46,49 @@ def run_command(storage: list[Product], line: str) -> bool:
         case ["show"]:
             get_storage_str_representation(storage)
             return True
-        case ["create", *_, price, quantity]:#попробовать заменить на line[-1] и line[-2] price и quantity
+        case [
+            "create",
+            *_,
+            price,
+            quantity,
+        ]:  # попробовать заменить на line[-1] и line[-2] price и quantity
             name = " ".join(line[1:-2])
             pocket = create_product(storage, (name, Decimal(price), int(quantity)))
             if pocket:
-                print (pocket)
+                print(pocket)
             return True
         case ["read", id_num]:
             output = read_product(storage, int(id_num))
             if output:
-                print (output)
+                print(output)
             return True
-        case ["update", id_num, *_, price, quantity]:#попробовать заменить на line[-1] и line[-2] price и quantity
+        case [
+            "update",
+            id_num,
+            *_,
+            price,
+            quantity,
+        ]:  # попробовать заменить на line[-1] и line[-2] price и quantity
             name = " ".join(line[2:-2])
-            pocket = update_product (storage, int(id_num), (name, Decimal(price), int(quantity)))
+            pocket = update_product(
+                storage, int(id_num), (name, Decimal(price), int(quantity))
+            )
             if pocket:
-                print (pocket)
+                print(pocket)
             return True
         case ["delete", id_num]:
             pocket = delete_product(storage, int(id_num))
             if pocket:
-                print (pocket)
+                print(pocket)
             return True
         case _:
             line = " ".join(line)
-            print (f"'{line}' is not a command")
+            print(f"'{line}' is not a command")
             return True
-    
 
 
 def main() -> None:
-    
+
     storage: list[Product] = []
     running = True
 
@@ -86,7 +98,7 @@ def main() -> None:
         try:
             running = run_command(storage, line)
 
-        except (ValueError):
+        except ValueError:
             print(f"{line!r} names a command but its arguments are invalid")
 
 

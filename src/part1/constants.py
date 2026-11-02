@@ -1,5 +1,5 @@
 from typing import Final
-import time
+
 
 EPOCH_MS_DEFAULT: Final[int] = 1288834974657
 NODE_ID_DEFAULT: Final[int] = 1
