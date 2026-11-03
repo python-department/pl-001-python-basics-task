@@ -11,8 +11,8 @@ an explanatory message to stdout and returns ``None``.
 
 from typing import Final
 
-from .crud import read_product, update_product  # noqa: F401
-from .storage import (  # noqa: F401
+from .crud import read_product, update_product
+from .storage import (
     NAME_INDEX,
     PRICE_INDEX,
     QUANTITY_INDEX,
@@ -22,9 +22,8 @@ from .storage import (  # noqa: F401
 
 type CartLine = tuple[int, int]
 
-# TODO: задайте позиции полей внутри кортежа CartLine
 LINE_PRODUCT_ID_INDEX: Final = 0
-LINE_QUANTITY_INDEX: Final = 0
+LINE_QUANTITY_INDEX: Final = 1
 
 
 def add_to_cart(
@@ -53,8 +52,33 @@ def add_to_cart(
         The cart line for ``product_id`` after the addition, or ``None``
         when the product is unknown or the store cannot cover the request.
     """
-    # TODO: реализуйте функцию
-    return (0, 0)
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    in_stock = product[QUANTITY_INDEX]
+    if in_stock < quantity:
+        print(
+            f"not enough stock for product {product_id}: "
+            f"{in_stock} available, {quantity} requested"
+        )
+        return None
+
+    update_product(
+        storage,
+        product_id,
+        (product[NAME_INDEX], product[PRICE_INDEX], in_stock - quantity),
+    )
+
+    for index, line in enumerate(cart):
+        if line[LINE_PRODUCT_ID_INDEX] == product_id:
+            new_line = (product_id, line[LINE_QUANTITY_INDEX] + quantity)
+            cart[index] = new_line
+            return new_line
+
+    new_line = (product_id, quantity)
+    cart.append(new_line)
+    return new_line
 
 
 def remove_from_cart(
@@ -85,5 +109,35 @@ def remove_from_cart(
         zero means the line was dropped), or ``None`` when the cart has no
         line for the product or holds too few units.
     """
-    # TODO: реализуйте функцию
-    return (0, 0)
+
+    for line_index, line in enumerate(cart):
+        if line[LINE_PRODUCT_ID_INDEX] == product_id:
+            break
+    else:
+        print(f"product {product_id} is not in the cart")
+        return None
+
+    in_cart = cart[line_index][LINE_QUANTITY_INDEX]
+    if in_cart < quantity:
+        print(
+            f"cart holds only {in_cart} unit(s) of product {product_id}, "
+            f"cannot remove {quantity}"
+        )
+        return None
+
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    update_product(
+        storage,
+        product_id,
+        (product[NAME_INDEX], product[PRICE_INDEX], product[QUANTITY_INDEX] + quantity),
+    )
+
+    new_line = (product_id, in_cart - quantity)
+    if new_line[LINE_QUANTITY_INDEX]:
+        cart[line_index] = new_line
+    else:
+        del cart[line_index]
+    return new_line
