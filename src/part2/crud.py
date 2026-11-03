@@ -14,13 +14,13 @@ is already taken.
 
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price  # noqa: F401
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -34,8 +34,12 @@ def generate_product_id(storage: list[Product]) -> int:
         :data:`~src.part2.storage.PRODUCT_ID_MIN` when ``storage`` is
         empty.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if storage:
+        id: int = max(tuple(el[PRODUCT_ID_INDEX] for el in storage)) + 1
+    else:
+        id = PRODUCT_ID_MIN
+
+    return id
 
 
 def create_product(
@@ -56,8 +60,12 @@ def create_product(
         ``storage`` is left unchanged and a message naming the clashing
         name is printed.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if fields[NAME_INDEX - 1] in tuple(el[NAME_INDEX] for el in storage):
+        print(f"product name {fields[0]} is already taken")
+        return None
+    id = generate_product_id(storage)
+    storage.append((id, fields[0], normalize_price(fields[1]), fields[2]))
+    return id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -72,8 +80,11 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
         ``None`` when no product carries that identifier (a message is
         printed in that case).
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    if product_id not in tuple(el[PRODUCT_ID_INDEX] for el in storage):
+        print(f"no product with id {product_id}")
+        return None
+
+    return next(filter(lambda x: x[PRODUCT_ID_INDEX], storage))
 
 
 def update_product(
@@ -99,8 +110,14 @@ def update_product(
         ``None`` when no product carries that identifier (``storage`` is
         left unchanged and a message is printed).
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    search = read_product(storage, product_id)
+    if search == None:
+        print(f"no product with id {product_id}")
+        return None
+
+    storage[storage.index(search)] = (product_id,) + fields
+
+    return next(filter(lambda x: x[PRODUCT_ID_INDEX] == product_id, storage))
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -116,5 +133,9 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         product carried that identifier (``storage`` is left unchanged and
         a message is printed).
     """
-    # TODO: реализуйте функцию
-    return 0
+    if not filter(lambda x: x[PRODUCT_ID_INDEX] == product_id, storage):
+        print(f"no product with id {product_id}")
+        return None
+
+    storage.remove(next(filter(lambda x: x[PRODUCT_ID_INDEX] == product_id, storage)))
+    return product_id
