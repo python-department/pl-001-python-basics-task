@@ -102,30 +102,28 @@ def run_command(
         decimal.InvalidOperation: If the price argument of ``create`` or
             ``update`` does not parse as a decimal number.
     """
-    words = line.split()
+    command = line.split()
 
-    if not words:
+    if not command:
         print(f"'{line}' is not a command")
         return True
 
-    command = words[0]
-
     match command:
-        case "help" if len(words) == 1:
+        case ["help"]:
             show_help()
             return True
 
-        case "exit" if len(words) == 1:
+        case ["exit"]:
             return False
 
-        case "show" if len(words) == 1:
+        case ["show"]:
             print(get_storage_str_representation(storage))
             return True
 
-        case "create" if len(words) >= 4:
-            name = " ".join(words[1:-2])
-            price = Decimal(words[-2])
-            quantity = int(words[-1])
+        case ["create", *name_parts, str_price, str_quantity]:
+            name = " ".join(name_parts)
+            price = Decimal(str_price)
+            quantity = int(str_quantity)
             result: str | Product | None = create_product(
                 storage,
                 product_names,
@@ -134,17 +132,17 @@ def run_command(
             print_result(result)
             return True
 
-        case "read" if len(words) == 2:
-            product_id = words[1]
+        case ["read", id]:
+            product_id = id
             result = read_product(storage, product_id)
             print_result(result)
             return True
 
-        case "update" if len(words) >= 5:
-            product_id = words[1]
-            name = " ".join(words[2:-2])
-            price = Decimal(words[-2])
-            quantity = int(words[-1])
+        case ["update", id, *name_parts, str_price, str_quantity]:
+            product_id = id
+            name = " ".join(name_parts)
+            price = Decimal(str_price)
+            quantity = int(str_quantity)
             result = update_product(
                 storage,
                 product_names,
@@ -154,8 +152,8 @@ def run_command(
             print_result(result)
             return True
 
-        case "delete" if len(words) == 2:
-            product_id = words[1]
+        case ["delete", id]:
+            product_id = id
             result = delete_product(storage, product_names, product_id)
             print_result(result)
             return True
