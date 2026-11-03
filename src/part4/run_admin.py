@@ -28,83 +28,90 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
-from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product  # noqa: F401
-from .utils import get_storage_str_representation  # noqa: F401
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import get_storage_str_representation
 
 
-# TODO: задайте приглашение и текст справки (используйте своё решение части 3)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "> "
+HELP_TEXT: Final[str] = (
+    "Commands:\n"
+    "  help                                              -- show this help\n"
+    "  exit                                              -- quit\n"
+    "  show                                              -- show the store\n"
+    "  create <name...> <price> <quantity>              -- add a product\n"
+    "  read <id>                                         -- show a product\n"
+    "  update <id> <name...> <price> <quantity>          -- update a product\n"
+    "  delete <id>                                       -- remove a product\n"
+    "Multi-word names need no quoting: the price and quantity are the last two words."
+)
 
 
 def show_help() -> None:
-    """Print the command reference to stdout.
-
-    The text is the module-level :data:`HELP_TEXT` constant, printed as
-    is: a heading, one line per command with a short description, and a
-    note on how multi-word names are parsed.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
-    """Print a CRUD result to stdout unless it is ``None``.
-
-    Args:
-        result: The value returned by a CRUD operation. ``None`` means the
-            operation already reported its own failure, so nothing is
-            printed in that case.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    if result is not None:
+        print(result)
 
 
 def run_command(
     storage: dict[str, Product], product_names: set[str], line: str
 ) -> bool:
-    """Parse one console line and carry out the command it names.
+    parts = line.split()
+    if not parts:
+        print(f"{line!r} is not a command")
+        return True
 
-    Args:
-        storage: The product store shared across the session; mutated in
-            place by the ``create``, ``update`` and ``delete`` commands.
-        product_names: The normalised names already in ``storage``; kept
-            in sync by the ``create``, ``update`` and ``delete`` commands.
-        line: One line of console input, already stripped of surrounding
-            whitespace.
+    command = parts[0]
 
-    Returns:
-        ``True`` to keep the read-eval-print loop running, or ``False``
-        once the ``exit`` command has been seen. A line that is not a
-        known command prints a notice and still returns ``True``.
+    match command:
+        case "help" if len(parts) == 1:
+            show_help()
+        case "exit" if len(parts) == 1:
+            return False
+        case "show" if len(parts) == 1:
+            print(get_storage_str_representation(storage))
+        case "create" if len(parts) >= 4:
+            *name_parts, price_str, quantity_str = parts[1:]
+            fields = {
+                NAME_KEY: " ".join(name_parts),
+                PRICE_KEY: Decimal(price_str),
+                QUANTITY_KEY: int(quantity_str),
+            }
+            print_result(create_product(storage, product_names, fields))
+        case "read" if len(parts) == 2:
+            print_result(read_product(storage, parts[1]))
+        case "update" if len(parts) >= 5:
+            product_id = parts[1]
+            *name_parts, price_str, quantity_str = parts[2:]
+            fields = {
+                NAME_KEY: " ".join(name_parts),
+                PRICE_KEY: Decimal(price_str),
+                QUANTITY_KEY: int(quantity_str),
+            }
+            print_result(update_product(storage, product_names, product_id, fields))
+        case "delete" if len(parts) == 2:
+            print_result(delete_product(storage, product_names, parts[1]))
+        case _:
+            if command in ("help", "exit", "show", "create", "read", "update", "delete"):
+                print(f"{line!r} names a command but its arguments are invalid")
+            else:
+                print(f"{line!r} is not a command")
+    return True
 
-    Raises:
-        ValueError: If the quantity argument of a CRUD command does not
-            parse as a base-10 integer.
-        decimal.InvalidOperation: If the price argument of ``create`` or
-            ``update`` does not parse as a decimal number.
-    """
-    # TODO: реализуйте функцию
-    return False
 
 
 def main() -> None:
-    """Run the admin console until the ``exit`` command is entered.
-
-    A single product store, and the set of normalised names it holds, are
-    created empty and kept in memory for the whole session. Each iteration
-    reads one line from stdin, strips its surrounding whitespace and hands
-    it to :func:`run_command`. A line that names a command but whose price
-    or quantity argument does not parse is caught here and reported
-    without stopping the loop; only ``exit`` ends it.
-    """
     storage: dict[str, Product] = {}
     product_names: set[str] = set()
     running = True
