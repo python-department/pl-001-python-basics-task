@@ -1,0 +1,13 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+
+# Linter / type-checker caches
+.ruff_cache/
+.mypy_cache/
+
+# Claude
+.claude

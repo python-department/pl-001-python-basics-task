@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Run the same checks locally as in CI (.github/workflows/ci.yml).
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "Error: uv is not installed. Install it: https://docs.astral.sh/uv/getting-started/installation/" >&2
+    exit 1
+fi
+
+echo "==> Install dependencies"
+uv sync --locked
+
+echo "==> Ruff lint"
+uv run ruff check src
+
+echo "==> Ruff format check"
+uv run ruff format --check src
+
+echo "==> MyPy"
+uv run mypy --strict src
+
+echo "All checks passed."
