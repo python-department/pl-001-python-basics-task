@@ -121,6 +121,7 @@ def generate_snowflake_id(
     if not (0 <= sequence_id <= SEQUENCE_ID_MAX):
         print(f"sequence_id must be in [0; {SEQUENCE_ID_MAX}], have {sequence_id}")
         return None
+    
 
     vremya = read_current_millis(epoch_ms)
     if vremya > TIMESTAMP_MS_MAX:

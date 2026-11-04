@@ -24,6 +24,7 @@ from typing import Final
 
 type Product = tuple[int, str, Decimal, int]
 
+
 # TODO: задайте позиции полей внутри кортежа Product (используйте своё решение
 # части 2)
 PRODUCT_ID_INDEX: Final = 0
