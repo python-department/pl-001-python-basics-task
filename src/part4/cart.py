@@ -9,10 +9,8 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+from .crud import read_product, update_product
+from .storage import QUANTITY_KEY, Product
 
 
 def add_to_cart(
@@ -46,8 +44,26 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    # TODO: реализуйте функцию
-    return 0
+    product = read_product(storage, product_id)
+
+    if product is None:
+        return None
+
+    if product[QUANTITY_KEY] < quantity:
+        print(
+            f"not enough stock for product {product_id}: {product[QUANTITY_KEY]} available, {quantity} requested"
+        )
+        return None
+
+    new_stock = product[QUANTITY_KEY] - quantity
+    update_product(storage, product_names, product_id, {QUANTITY_KEY: new_stock})
+
+    in_cart = cart.get(product_id, 0) + quantity
+
+    if in_cart > 0:
+        cart[product_id] = in_cart
+
+    return in_cart
 
 
 def remove_from_cart(
@@ -83,5 +99,28 @@ def remove_from_cart(
         (zero means the product was dropped from the cart), or ``None`` when
         the cart does not hold the product or holds too few units.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if product_id not in cart:
+        print(f"product {product_id} is not in the cart")
+        return None
+
+    if cart[product_id] < quantity:
+        print(
+            f"cart holds only {cart[product_id]} unit(s) of product {product_id}, cannot remove {quantity}"
+        )
+        return None
+
+    product = read_product(storage, product_id)
+
+    if product is None:
+        return None
+
+    new_stock = product[QUANTITY_KEY] + quantity
+    update_product(storage, product_names, product_id, {QUANTITY_KEY: new_stock})
+
+    cart[product_id] -= quantity
+    left_in_cart = cart[product_id]
+
+    if left_in_cart == 0:
+        del cart[product_id]
+
+    return left_in_cart
