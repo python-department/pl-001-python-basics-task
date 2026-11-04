@@ -13,6 +13,7 @@ Normalisation:
 
 Presentation:
 
+
 * :func:`get_storage_str_representation` renders the whole store as a
   text table meant to be printed to a terminal; each column is sized to
   the longest value it holds in that particular call.

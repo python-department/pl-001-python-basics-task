@@ -13,6 +13,7 @@ with a ``match`` statement, against the set of known commands:
 * ``update <id> <name...> <price> <quantity>`` -- overwrite a product;
 * ``delete <id>`` -- remove a product.
 
+
 For ``create`` and ``update`` the price and quantity are always the last
 two words of the line; everything between the verb (and, for ``update``,
 the id) and those two words is joined with single spaces into the

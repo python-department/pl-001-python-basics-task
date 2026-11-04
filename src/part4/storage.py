@@ -21,6 +21,7 @@ UUID string assigned by the create operation in :mod:`src.part4.crud`
 Field names are exposed as ``*_KEY`` constants so callers never hard-code
 the dictionary keys.
 
+
 Every caller that mutates the store also threads along a second
 structure, a ``set[str]`` of the normalised names currently in use --
 see, for example, the ``product_names`` parameter of
