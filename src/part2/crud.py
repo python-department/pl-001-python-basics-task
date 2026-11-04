@@ -65,14 +65,13 @@ def create_product(
         if product[NAME_INDEX] == name:
             print(f"product name '{name}' is already taken")
             return None
-        
+
     product_id = generate_product_id(storage)
     normalized_price = normalize_price(price)
-    
+
     new_product = (product_id, name, normalized_price, quantity)
     storage.append(new_product)
     return product_id
-    
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -91,7 +90,7 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
     for product in storage:
         if product[PRODUCT_ID_INDEX] == product_id:
             return product
-            
+
     print(f"no product with id {product_id}")
     return None
 
@@ -128,10 +127,9 @@ def update_product(
             updated_product = (product_id, name, normalized_price, quantity)
             storage[i] = updated_product
             return updated_product
-            
+
     print(f"no product with id {product_id}")
     return None
-    
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -152,7 +150,6 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         if product[PRODUCT_ID_INDEX] == product_id:
             del storage[i]
             return product_id
-            
+
     print(f"no product with id {product_id}")
     return None
-    
