@@ -21,6 +21,7 @@ hard-code tuple offsets.
 from decimal import Decimal
 from typing import Final
 
+
 type Product = tuple[int, str, Decimal, int]
 
 # TODO: задайте позиции полей внутри кортежа Product

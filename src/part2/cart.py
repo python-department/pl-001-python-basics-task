@@ -19,14 +19,16 @@ from .storage import (
     Product,
 )
 
+
 type CartLine = tuple[int, int]
 
 # TODO: задайте позиции полей внутри кортежа CartLine
 LINE_PRODUCT_ID_INDEX: Final = 0
 LINE_QUANTITY_INDEX: Final = 1
 
+
 def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine | None:
-    
+
     for line in cart:
         if line[LINE_PRODUCT_ID_INDEX] == product_id:
             return line
@@ -36,19 +38,20 @@ def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine | None:
 def change_cart_quantity(
     cart: list[CartLine], product_id: int, delta: int
 ) -> CartLine | None:
-    
+
     for i, line in enumerate(cart):
         if line[LINE_PRODUCT_ID_INDEX] == product_id:
             new_quantity = line[LINE_QUANTITY_INDEX] + delta
-            
+
             if new_quantity == 0:
                 del cart[i]
-                return None 
+                return None
             else:
                 new_line = (product_id, new_quantity)
                 cart[i] = new_line
                 return new_line
     return None
+
 
 def add_to_cart(
     storage: list[Product],
@@ -102,7 +105,6 @@ def add_to_cart(
         return new_line
 
 
-
 def remove_from_cart(
     storage: list[Product],
     cart: list[CartLine],
@@ -148,7 +150,7 @@ def remove_from_cart(
     product = read_product(storage, product_id)
     if product is None:
         return None
-    
+
     new_stock_quantity = product[QUANTITY_INDEX] + quantity
     fields = (product[NAME_INDEX], product[PRICE_INDEX], new_stock_quantity)
     update_product(storage, product_id, fields)

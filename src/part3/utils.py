@@ -73,7 +73,7 @@ def normalize_product_name(name: str) -> str:
         whitespace.
     """
     # TODO: реализуйте функцию
-    
+
     return " ".join(name.split()).lower()
 
 

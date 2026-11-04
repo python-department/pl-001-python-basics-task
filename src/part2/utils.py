@@ -9,6 +9,7 @@ currency values free of binary floating-point error.
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
+
 # TODO: задайте число знаков после запятой и шаг квантования
 PRICE_PRECISION: Final[int] = 2
 PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)

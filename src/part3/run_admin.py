@@ -144,7 +144,6 @@ def run_command(storage: list[Product], line: str) -> bool:
     return True
 
 
-
 def main() -> None:
     """Run the admin console until the ``exit`` command is entered.
 
