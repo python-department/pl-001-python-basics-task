@@ -1,95 +1,71 @@
-"""Standalone helpers shared by the part3 storage and CRUD modules.
-
-Normalisation:
-
-* :func:`normalize_price` rounds a raw :class:`~decimal.Decimal` amount to
-  the fixed number of fractional digits (:data:`PRICE_PRECISION`) that
-  every stored price uses, keeping currency values free of binary
-  floating-point error.
-* :func:`normalize_product_name` strips surrounding whitespace from a
-  product name, collapses every internal run of whitespace to a single
-  space and lower-cases it, giving every stored name a single canonical
-  form.
-
-Presentation:
-
-* :func:`get_storage_str_representation` renders the whole store as a
-  text table meant to be printed to a terminal; each column is sized to
-  the longest value it holds in that particular call.
-"""
-
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .storage import Product
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final[Decimal] = Decimal(1).scaleb(-PRICE_PRECISION)
 
-# Column headers of the table produced by get_storage_str_representation,
-# left to right. The width of each column is not fixed here -- it is
-# measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    return " ".join(name.lower().split())
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def heider_one_write(width: int) -> str:
+    return "|" + "-" * (width + 2)
+
+
+def post_heider_write(w1: int, w2: int, w3: int, w4: int) -> str:
+    return (
+        heider_one_write(w1)
+        + heider_one_write(w2)
+        + heider_one_write(w3)
+        + heider_one_write(w4)
+        + "|"
+    )
+
+
+def max_storege_len(storage: list[Product], id: int) -> int:
+    widths = [len(TABLE_HEADERS[id])]
+    for product in storage:
+        widths.append(len(str(product[id])))
+    return max(widths)
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    widths_colomn = [max_storege_len(storage, i) for i in range(len(TABLE_HEADERS))]
 
-    Args:
-        storage: The product store to render.
+    header = (
+        "|"
+        + "|".join(
+            f" {TABLE_HEADERS[i].ljust(widths_colomn[i])} "
+            for i in range(len(TABLE_HEADERS))
+        )
+        + "|"
+    )
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage`` in list order. When ``storage``
-        is empty only the header and separator rows are returned, sized to
-        the header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    razdel = post_heider_write(*widths_colomn)
+
+    lines = [header, razdel]
+    for product in storage:
+        one_product = [str(product[i]) for i in range(len(TABLE_HEADERS))]
+        output_product_one = (
+            "|"
+            + "|".join(
+                f" {one_product[i].ljust(widths_colomn[i])} "
+                for i in range(len(TABLE_HEADERS))
+            )
+            + "|"
+        )
+        lines.append(output_product_one)
+
+    return "\n".join(lines)
