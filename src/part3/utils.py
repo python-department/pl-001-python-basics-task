@@ -1,95 +1,96 @@
-"""Standalone helpers shared by the part3 storage and CRUD modules.
-
-Normalisation:
-
-* :func:`normalize_price` rounds a raw :class:`~decimal.Decimal` amount to
-  the fixed number of fractional digits (:data:`PRICE_PRECISION`) that
-  every stored price uses, keeping currency values free of binary
-  floating-point error.
-* :func:`normalize_product_name` strips surrounding whitespace from a
-  product name, collapses every internal run of whitespace to a single
-  space and lower-cases it, giving every stored name a single canonical
-  form.
-
-Presentation:
-
-* :func:`get_storage_str_representation` renders the whole store as a
-  text table meant to be printed to a terminal; each column is sized to
-  the longest value it holds in that particular call.
-"""
-
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .storage import Product
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
-# Column headers of the table produced by get_storage_str_representation,
-# left to right. The width of each column is not fixed here -- it is
-# measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return Decimal(price).quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию
-    return ""
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+    rename = (" ".join(name.split())).lower()
+    return rename
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    storage_str = []
+    for item in storage:
+        ids, name, price, quantity = item
+        item_str = [str(ids), name, str(price), str(quantity)]
+        storage_str.append(item_str)
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    namemaxlen = max(
+        [len(item_str[1]) for item_str in storage_str] + [len(TABLE_HEADERS[1])]
+    )
+    idsmaxlen = max(
+        [len(item_str[0]) for item_str in storage_str] + [len(TABLE_HEADERS[0])]
+    )
+    pricemaxlen = max(
+        [len(item_str[2]) for item_str in storage_str] + [len(TABLE_HEADERS[2])]
+    )
+    quantitymaxlen = max(
+        [len(item_str[3]) for item_str in storage_str] + [len(TABLE_HEADERS[3])]
+    )
 
-    Args:
-        storage: The product store to render.
+    s = (
+        "|"
+        + " "
+        + "ID"
+        + (" " * (idsmaxlen - len("ID") + 1))
+        + "|"
+        + " "
+        + "name"
+        + (" " * (namemaxlen - len("name") + 1))
+        + "|"
+        + " "
+        + "price"
+        + (" " * (pricemaxlen - len("price") + 1))
+        + "|"
+        + " "
+        + "quantity"
+        + (" " * (quantitymaxlen - len("quantity") + 1))
+        + "|"
+    )
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage`` in list order. When ``storage``
-        is empty only the header and separator rows are returned, sized to
-        the header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    s_ = (
+        "|"
+        + ("-" * (idsmaxlen + 2))
+        + "|"
+        + ("-" * (namemaxlen + 2))
+        + "|"
+        + ("-" * (pricemaxlen + 2))
+        + "|"
+        + ("-" * (quantitymaxlen + 2))
+        + "|"
+    )
+    storage_ans = []
+    for item_str in storage_str:
+        item_ans = (
+            "|"
+            + " "
+            + item_str[0]
+            + (" " * (idsmaxlen - len(item_str[0]) + 1))
+            + "|"
+            + " "
+            + item_str[1]
+            + (" " * (namemaxlen - len(item_str[1]) + 1))
+            + "|"
+            + " "
+            + item_str[2]
+            + (" " * (pricemaxlen - len(item_str[2]) + 1))
+            + "|"
+            + " "
+            + item_str[3]
+            + (" " * (quantitymaxlen - len(item_str[3]) + 1))
+            + "|"
+        )
+        storage_ans.append(item_ans)
+    result = "\n".join([s, s_] + storage_ans)
+    return result
