@@ -14,9 +14,18 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
+import time
 from collections.abc import Callable
 
-from .constants import EPOCH_MS_DEFAULT, NODE_ID_DEFAULT
+from .constants import (
+    EPOCH_MS_DEFAULT,
+    NODE_ID_DEFAULT,
+    NODE_ID_MAX,
+    NODE_ID_SHIFT,
+    SEQUENCE_ID_MAX,
+    TIMESTAMP_MS_MAX,
+    TIMESTAMP_SHIFT,
+)
 
 
 def read_current_millis(epoch_ms: int) -> int:
@@ -29,39 +38,33 @@ def read_current_millis(epoch_ms: int) -> int:
         The count of whole milliseconds between ``epoch_ms`` and now. Negative
         if ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return int(time.time() * 1000) - epoch_ms
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
-    """Read the timestamp field out of a Snowflake identifier.
+    """Read the number of milliseconds elapsed since the custom epoch.
 
     Args:
-        snowflake_id: An identifier produced against the same epoch.
-        epoch_ms: The epoch the identifier was generated against. Defaults to
-            the original Twitter epoch (2010-11-04 01:42:54.657 UTC).
+        epoch_ms: The custom epoch expressed as Unix milliseconds.
 
     Returns:
-        The absolute Unix time in milliseconds at which the identifier was
-        generated.
+        The count of whole milliseconds between ``epoch_ms`` and now. Negative
+        if ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return ((snowflake_id >> TIMESTAMP_SHIFT) & TIMESTAMP_MS_MAX) + epoch_ms
 
 
 def decode_node_id(snowflake_id: int) -> int:
-    """Read the node identifier field out of a Snowflake identifier.
+    """Read the number of milliseconds elapsed since the custom epoch.
 
     Args:
-        snowflake_id: An identifier produced by a generator from
-            :func:`get_snowflake_id_generator`.
+        epoch_ms: The custom epoch expressed as Unix milliseconds.
 
     Returns:
-        The node identifier packed into ``snowflake_id``, in the range
-        ``[0, NODE_ID_MAX]``.
+        The count of whole milliseconds between ``epoch_ms`` and now. Negative
+        if ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return (snowflake_id >> NODE_ID_SHIFT) & NODE_ID_MAX
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -75,8 +78,7 @@ def decode_sequence_id(snowflake_id: int) -> int:
         The per-millisecond sequence counter packed into ``snowflake_id``, in
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return snowflake_id & SEQUENCE_ID_MAX
 
 
 def get_snowflake_id_generator(
@@ -108,5 +110,38 @@ def get_snowflake_id_generator(
         to stdout, if ``node_id`` is outside ``[0, NODE_ID_MAX]`` or
         ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию
-    return lambda: 0
+    if not 0 <= node_id <= NODE_ID_MAX:
+        print(f"node_id must be in [0, {NODE_ID_MAX}], got {node_id}")
+        return None
+
+    if read_current_millis(epoch_ms) < 0:
+        print(f"epoch_ms must not be in the future, got {epoch_ms}")
+        return None
+
+    last_timestamp = -1
+    sequence_id = 0
+
+    def generate() -> int | None:
+        nonlocal last_timestamp, sequence_id
+
+        timestamp_ms = read_current_millis(epoch_ms)
+        if timestamp_ms > last_timestamp:
+            last_timestamp = timestamp_ms
+            sequence_id = 0
+        else:
+            timestamp_ms = last_timestamp
+            sequence_id += 1
+
+        if sequence_id > SEQUENCE_ID_MAX:
+            print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}")
+            return None
+
+        if timestamp_ms > TIMESTAMP_MS_MAX:
+            print(f"timestamp {timestamp_ms} ms overflows {TIMESTAMP_MS_MAX} ms")
+            return None
+
+        return (
+            (timestamp_ms << TIMESTAMP_SHIFT) | (node_id << NODE_ID_SHIFT) | sequence_id
+        )
+
+    return generate

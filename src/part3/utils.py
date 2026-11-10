@@ -1,41 +1,20 @@
-"""Standalone helpers shared by the part3 storage and CRUD modules.
+"""Standalone helpers shared by the part2 storage and CRUD modules.
 
-Normalisation:
-
-* :func:`normalize_price` rounds a raw :class:`~decimal.Decimal` amount to
-  the fixed number of fractional digits (:data:`PRICE_PRECISION`) that
-  every stored price uses, keeping currency values free of binary
-  floating-point error.
-* :func:`normalize_product_name` strips surrounding whitespace from a
-  product name, collapses every internal run of whitespace to a single
-  space and lower-cases it, giving every stored name a single canonical
-  form.
-
-Presentation:
-
-* :func:`get_storage_str_representation` renders the whole store as a
-  text table meant to be printed to a terminal; each column is sized to
-  the longest value it holds in that particular call.
+For now this is limited to money handling: :func:`normalize_price` rounds a
+raw :class:`~decimal.Decimal` amount to the fixed number of fractional
+digits (:data:`PRICE_PRECISION`) that every stored price uses, keeping
+currency values free of binary floating-point error.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .storage import Product
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
-
-# Column headers of the table produced by get_storage_str_representation,
-# left to right. The width of each column is not fixed here -- it is
-# measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -48,8 +27,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -66,11 +44,7 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию
-    return ""
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+    return " ".join(name.split()).lower()
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
@@ -91,5 +65,32 @@ def get_storage_str_representation(storage: list[Product]) -> str:
         is empty only the header and separator rows are returned, sized to
         the header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+
+    widths = []
+    for column, header in enumerate(TABLE_HEADERS):
+        lengths = [len(str(product[column])) for product in storage]
+        widths.append(max([len(header), *lengths]))
+
+    rows: list[tuple[str, ...]] = [TABLE_HEADERS]
+    for product in storage:
+        rows.append(tuple(str(field) for field in product))
+
+    result = []
+
+    line = "|"
+    for i in range(len(rows[0])):
+        line += " " + rows[0][i].ljust(widths[i]) + " |"
+    result.append(line)
+
+    line = "|"
+    for width in widths:
+        line += "-" * (width + 2) + "|"
+    result.append(line)
+
+    for row in rows[1:]:
+        line = "|"
+        for i in range(len(row)):
+            line += " " + row[i].ljust(widths[i]) + " |"
+        result.append(line)
+
+    return "\n".join(result)
