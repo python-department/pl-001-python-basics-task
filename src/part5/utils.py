@@ -21,100 +21,153 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 # TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
+    correct_price = price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return correct_price
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
+    correct_name = [word.lower() for word in name.split()]
 
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return " ".join(correct_name)
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    len_headers = [
+        len(TABLE_HEADERS[0]),
+        len(TABLE_HEADERS[1]),
+        len(TABLE_HEADERS[2]),
+        len(TABLE_HEADERS[3]),
+    ]
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    for product_id, product_info in storage.items():
+        len_id = len(str(product_id))
+        len_name = len(str(product_info[NAME_KEY]))
+        len_price = len(str(product_info[PRICE_KEY]))
+        len_quantity = len(str(product_info[QUANTITY_KEY]))
 
-    Args:
-        storage: The product store to render.
+        len_headers = [
+            max(len_headers[0], len_id),
+            max(len_headers[1], len_name),
+            max(len_headers[2], len_price),
+            max(len_headers[3], len_quantity),
+        ]
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage``, in insertion order. When
-        ``storage`` is empty only the header and separator rows are
-        returned, sized to the header labels.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    first_header = [f" {TABLE_HEADERS[i].ljust(len_headers[i])} " for i in range(4)]
+
+    first_row = "|" + "|".join(first_header) + "|"
+
+    sep_str = ["-" * (len_headers[i] + 2) for i in range(4)]
+    sep_row = "|" + "|".join(sep_str) + "|"
+
+    strings = [first_row, sep_row]
+
+    for product_id, product_info in storage.items():
+        current_info = [
+            str(product_id),
+            str(product_info[NAME_KEY]),
+            str(product_info[PRICE_KEY]),
+            str(product_info[QUANTITY_KEY]),
+        ]
+
+        current_string = [
+            f" {current_info[i].ljust(len_headers[i])} " for i in range(4)
+        ]
+        current_string_with_sep = "|" + "|".join(current_string) + "|"
+        strings.append(current_string_with_sep)
+
+    return "\n".join(strings)
 
 
 def get_stats_str_representation(registry: Registry) -> str:
-    """Render the call statistics as a text table with data-sized columns.
+    len_headers = [
+        len(STATS_TABLE_HEADERS[0]),
+        len(STATS_TABLE_HEADERS[1]),
+        len(STATS_TABLE_HEADERS[2]),
+        len(STATS_TABLE_HEADERS[3]),
+    ]
 
-    The table has the columns named by :data:`STATS_TABLE_HEADERS` -- command
-    name, number of successful calls, number of failed calls and success
-    rate. It is laid out like the one from
-    :func:`get_storage_str_representation`: every column is as wide as the
-    longest value it carries, its header counted.
+    for command_name, stats in registry.items():
+        success = stats[SUCCESS_KEY]
+        fails = stats[FAILS_KEY]
+        total = success + fails
 
-    Args:
-        registry: The statistics to render, a mapping of command name to the
-            counters kept by :func:`~src.part5.decorators.collect_stats`.
+        if total == 0:
+            rate_str = "0.00%"
+        else:
+            rate_str = f"{(success / total * 100):.2f}%"
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then one
-        row per registry entry in insertion order. When ``registry`` is
-        empty only the header and separator rows are returned, sized to the
-        header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+        len_cmd = len(command_name)
+        len_success = len(str(success))
+        len_fails = len(str(fails))
+        len_rate = len(rate_str)
+
+        len_headers = [
+            max(len_headers[0], len_cmd),
+            max(len_headers[1], len_success),
+            max(len_headers[2], len_fails),
+            max(len_headers[3], len_rate),
+        ]
+
+    first_header = [
+        f" {STATS_TABLE_HEADERS[i].ljust(len_headers[i])} " for i in range(4)
+    ]
+    first_row = "|" + "|".join(first_header) + "|"
+
+    sep_str = ["-" * (len_headers[i] + 2) for i in range(4)]
+    sep_row = "|" + "|".join(sep_str) + "|"
+
+    strings = [first_row, sep_row]
+
+    for command_name, stats in registry.items():
+        success = stats[SUCCESS_KEY]
+        fails = stats[FAILS_KEY]
+        total = success + fails
+
+        if total == 0:
+            rate_str = "0.00%"
+        else:
+            rate_str = f"{(success / total * 100):.2f}%"
+
+        current_info = [
+            command_name,
+            str(success),
+            str(fails),
+            rate_str,
+        ]
+
+        current_string = [
+            f" {current_info[i].ljust(len_headers[i])} " for i in range(4)
+        ]
+        current_string_with_sep = "|" + "|".join(current_string) + "|"
+        strings.append(current_string_with_sep)
+
+    return "\n".join(strings)
