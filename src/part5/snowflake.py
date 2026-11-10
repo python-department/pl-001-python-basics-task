@@ -133,21 +133,15 @@ def get_snowflake_id_generator(
             sequence_id += 1
 
         if sequence_id > SEQUENCE_ID_MAX:
-            print(
-                f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}"
-            )
+            print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}")
             return None
 
         if timestamp_ms > TIMESTAMP_MS_MAX:
-            print(
-                f"timestamp {timestamp_ms} ms overflows {TIMESTAMP_MS_MAX} ms"
-            )
+            print(f"timestamp {timestamp_ms} ms overflows {TIMESTAMP_MS_MAX} ms")
             return None
 
         return (
-            (timestamp_ms << TIMESTAMP_SHIFT)
-            | (node_id << NODE_ID_SHIFT)
-            | sequence_id
+            (timestamp_ms << TIMESTAMP_SHIFT) | (node_id << NODE_ID_SHIFT) | sequence_id
         )
 
     return generate

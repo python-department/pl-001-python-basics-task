@@ -53,6 +53,7 @@ def collect_stats[**P, R](
         ``None``. The decorated function has the same signature, name and
         docstring as the original (see :func:`functools.wraps`).
     """
+
     def decorator(
         function: Callable[P, R | None],
     ) -> Callable[P, R | None]:
