@@ -109,10 +109,11 @@ def get_stats_str_representation(registry: Registry) -> str:
             )
 
     str_representation = ""
-    
+
     str_representation += (
         line_string_headers(max_len_column, STATS_TABLE_HEADERS) + "\n"
     )
+
     str_representation += line_void(max_len_column) + "\n"
 
     for row in rows:
