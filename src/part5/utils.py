@@ -21,23 +21,33 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
-from typing import Final
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import (
+    FAILS_KEY,
+    SUCCESS_KEY,
+    Registry,
+)
+from .storage import (
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+    Product,
+)
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -50,8 +60,8 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,11 +78,8 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
 
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+    return "".join([elem.lower() for elem in name.split()])
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
@@ -93,8 +100,60 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    if storage:
+        table_len_columns = (
+            max(
+                max(len(str(elem)) for elem in storage),
+                len(TABLE_HEADERS[0]),
+            ),
+            max(
+                max(len(elem[NAME_KEY]) for elem in storage.values()),
+                len(TABLE_HEADERS[1]),
+            ),
+            max(
+                max(len(str(elem[PRICE_KEY])) for elem in storage.values()),
+                len(TABLE_HEADERS[2]),
+            ),
+            max(
+                max(len(str(elem[QUANTITY_KEY])) for elem in storage.values()),
+                len(TABLE_HEADERS[3]),
+            ),
+        )
+    else:
+        table_len_columns = (
+            len(TABLE_HEADERS[0]),
+            len(TABLE_HEADERS[1]),
+            len(TABLE_HEADERS[2]),
+            len(TABLE_HEADERS[3]),
+        )
+
+    first_string = make_string(TABLE_HEADERS, table_len_columns)
+
+    second_string = (
+        "|" + "|".join("-" * (length + 2) for length in table_len_columns) + "|"
+    )
+
+    product_strings = "\n".join(
+        make_string((id,) + tuple(storage[id].values()), table_len_columns)
+        for id in storage
+    )
+
+    return first_string + "\n" + second_string + "\n" + product_strings
+
+
+def make_string(
+    string: tuple[Any, ...],
+    table_len_columns: tuple[int, ...],
+) -> str:
+    string = tuple(str(i) for i in string)
+    return (
+        "|"
+        + "|".join(
+            str(el).ljust(length + 1).rjust(length + 2)
+            for el, length in zip(string, table_len_columns)
+        )
+        + "|"
+    )
 
 
 def get_stats_str_representation(registry: Registry) -> str:
@@ -116,5 +175,51 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    if registry:
+        table_len_columns = (
+            max(
+                max(len(str(elem)) for elem in registry),
+                len(STATS_TABLE_HEADERS[0]),
+            ),
+            max(
+                max(len(str(elem[SUCCESS_KEY])) for elem in registry.values()),
+                len(STATS_TABLE_HEADERS[1]),
+            ),
+            max(
+                max(len(str(elem[FAILS_KEY])) for elem in registry.values()),
+                len(STATS_TABLE_HEADERS[2]),
+            ),
+            max(
+                len("100.00%"),
+                len(STATS_TABLE_HEADERS[3]),
+            ),
+        )
+    else:
+        table_len_columns = (
+            len(STATS_TABLE_HEADERS[0]),
+            len(STATS_TABLE_HEADERS[1]),
+            len(STATS_TABLE_HEADERS[2]),
+            len(STATS_TABLE_HEADERS[3]),
+        )
+
+    first_string = make_string(STATS_TABLE_HEADERS, table_len_columns)
+
+    second_string = (
+        "|" + "|".join("-" * (length + 2) for length in table_len_columns) + "|"
+    )
+
+    statistic_strings = "\n".join(
+        (
+            make_string(
+                (cmd,)
+                + tuple(registry[cmd].values())
+                + (
+                    f"{(0 if not sum(registry[cmd].values()) else registry[cmd][SUCCESS_KEY] / sum(registry[cmd].values())):.2%}",
+                ),
+                table_len_columns,
+            )
+        )
+        for cmd in registry
+    )
+
+    return first_string + "\n" + second_string + "\n" + statistic_strings

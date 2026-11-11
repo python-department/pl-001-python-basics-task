@@ -14,9 +14,20 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
+import time
 from collections.abc import Callable
+from typing import Any
 
-from .constants import EPOCH_MS_DEFAULT, NODE_ID_DEFAULT
+from .constants import (
+    EPOCH_MS_DEFAULT,
+    NODE_ID_BITS,
+    NODE_ID_DEFAULT,
+    NODE_ID_MAX,
+    SEQUENCE_ID_BITS,
+    SEQUENCE_ID_MAX,
+    TIMESTAMP_BITS,
+    TIMESTAMP_MS_MAX,
+)
 
 
 def read_current_millis(epoch_ms: int) -> int:
@@ -26,11 +37,10 @@ def read_current_millis(epoch_ms: int) -> int:
         epoch_ms: The custom epoch expressed as Unix milliseconds.
 
     Returns:
-        The count of whole milliseconds between ``epoch_ms`` and now. Negative
-        if ``epoch_ms`` lies in the future.
+        The count of whole milliseconds between ``epoch_ms`` and now. May be
+        negative if ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return time.time_ns() // 10**6 - epoch_ms
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
@@ -45,38 +55,36 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
         The absolute Unix time in milliseconds at which the identifier was
         generated.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    del_time = (snowflake_id >> (NODE_ID_BITS + TIMESTAMP_BITS)) & TIMESTAMP_MS_MAX
+
+    return epoch_ms + del_time
 
 
 def decode_node_id(snowflake_id: int) -> int:
     """Read the node identifier field out of a Snowflake identifier.
 
     Args:
-        snowflake_id: An identifier produced by a generator from
-            :func:`get_snowflake_id_generator`.
+        snowflake_id: An identifier produced by :func:`generate_snowflake_id`.
 
     Returns:
         The node identifier packed into ``snowflake_id``, in the range
         ``[0, NODE_ID_MAX]``.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+
+    return (snowflake_id >> SEQUENCE_ID_BITS) & NODE_ID_MAX
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
     """Read the sequence counter field out of a Snowflake identifier.
 
     Args:
-        snowflake_id: An identifier produced by a generator from
-            :func:`get_snowflake_id_generator`.
+        snowflake_id: An identifier produced by :func:`generate_snowflake_id`.
 
     Returns:
         The per-millisecond sequence counter packed into ``snowflake_id``, in
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return snowflake_id & SEQUENCE_ID_MAX
 
 
 def get_snowflake_id_generator(
@@ -108,5 +116,40 @@ def get_snowflake_id_generator(
         to stdout, if ``node_id`` is outside ``[0, NODE_ID_MAX]`` or
         ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию
-    return lambda: 0
+    if not (0 <= node_id <= NODE_ID_MAX):
+        print(f"node_id must be in [0, {NODE_ID_MAX}]. got {node_id}")
+        return None
+    elif read_current_millis(epoch_ms) < 0:
+        print(f"epoch_ms must not be in the future, got {epoch_ms}")
+        return None
+    else:
+        sequence_id = -1
+        time_old = read_current_millis(epoch_ms)
+
+        def generator() -> int | Any:
+            nonlocal sequence_id
+            nonlocal time_old
+
+            if (time := read_current_millis(epoch_ms)) != time_old:
+                time_old = time
+                sequence_id = -1
+
+            if (sequence_id := sequence_id + 1) > SEQUENCE_ID_MAX + 1:
+                print(
+                    f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}"
+                )
+                return None
+
+            elif time > TIMESTAMP_MS_MAX:
+                print(
+                    f"timestamp {time} ms overflows {TIMESTAMP_MS_MAX} ms, где {time}"
+                )
+                return None
+
+            return (
+                (time << (SEQUENCE_ID_BITS + NODE_ID_BITS))
+                + (node_id << SEQUENCE_ID_BITS)
+                + sequence_id
+            )
+
+    return generator
