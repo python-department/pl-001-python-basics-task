@@ -18,10 +18,10 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
@@ -29,72 +29,55 @@ from .storage import (  # noqa: F401
 )
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 3)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
-# Column headers of the table produced by get_storage_str_representation,
-# left to right. The width of each column is not fixed here -- it is
-# measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 3)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+ID_KEY: Final[str] = TABLE_HEADERS[0]
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    normalized_name = " ".join(name.split()).lower()
+    return normalized_name
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
 
 
 def get_storage_str_representation(storage: dict[str, Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    lens = {
+        key: [len(h)]
+        for key, h in zip((ID_KEY, NAME_KEY, PRICE_KEY, QUANTITY_KEY), TABLE_HEADERS)
+    }
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    for product_id, product in storage.items():
+        lens[ID_KEY].append(len(product_id))
+        for key in (NAME_KEY, PRICE_KEY, QUANTITY_KEY):
+            lens[key].append(len(str(product[key])))
 
-    Args:
-        storage: The product store to render.
+    maxlens = list(map(max, lens.values()))
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage``, in insertion order. When
-        ``storage`` is empty only the header and separator rows are
-        returned, sized to the header labels.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    header_str = "|"
+    separating_str = "|"
+    for header, length in zip(TABLE_HEADERS, maxlens):
+        header_str += f" {header.ljust(length)} |"
+        separating_str += "-" + "-" * length + "-|"
+
+    table = header_str + "\n" + separating_str
+
+    for product_id, product in storage.items():
+        table += "\n|"
+        elems = (
+            product_id,
+            product[NAME_KEY],
+            product[PRICE_KEY],
+            product[QUANTITY_KEY],
+        )
+        for elem, length in zip(elems, maxlens):
+            table += f" {str(elem).ljust(length)} |"
+
+    return table
