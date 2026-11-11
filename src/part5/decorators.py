@@ -14,15 +14,19 @@ a falsy one such as ``0``, counts as a success.
 """
 
 from collections.abc import Callable
+from functools import wraps
 from typing import Final
 
 
-# TODO: задайте имена двух счётчиков, см. TASK.md
-SUCCESS_KEY: Final[str] = ""
-FAILS_KEY: Final[str] = ""
+# Names of the two counters kept in a Stats record.
+SUCCESS_KEY: Final[str] = "success"
+FAILS_KEY: Final[str] = "fails"
 
 
+# Counters of one function: how many calls succeeded and how many failed.
 type Stats = dict[str, int]
+
+# Counters of every registered function, keyed by the registration key.
 type Registry = dict[str, Stats]
 
 
@@ -53,5 +57,23 @@ def collect_stats[**P, R](
         ``None``. The decorated function has the same signature, name and
         docstring as the original (see :func:`functools.wraps`).
     """
-    # TODO: реализуйте декоратор
-    return lambda function: function
+
+    def decorator(function: Callable[P, R | None]) -> Callable[P, R | None]:
+        if key in registry:
+            print(f"stats key {key!r} is already registered")
+            return function
+
+        registry[key] = {SUCCESS_KEY: 0, FAILS_KEY: 0}
+
+        @wraps(function)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
+            result = function(*args, **kwargs)
+            if result is None:
+                registry[key][FAILS_KEY] += 1
+            else:
+                registry[key][SUCCESS_KEY] += 1
+            return result
+
+        return wrapper
+
+    return decorator
