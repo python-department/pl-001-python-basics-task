@@ -21,23 +21,39 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
+from .storage import (
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+    Product,
+)
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+# Number of fractional digits every stored price is rounded to.
+# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
+# Column headers of the table produced by get_storage_str_representation,
+# left to right. The width of each column is not fixed here -- it is
+# measured per call from the data (see the function).
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+# Column headers of the table produced by get_stats_str_representation,
+# left to right; measured per call the same way as TABLE_HEADERS.
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
+
+# Step the success rate percentage is rounded to, e.g. Decimal("0.01").
+_STATS_RATE_STEP: Final = Decimal(1).scaleb(-2)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -50,8 +66,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,11 +83,44 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return " ".join(name.split()).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def _render_table(headers: tuple[str, ...], rows: tuple[tuple[str, ...], ...]) -> str:
+    """Lay out a header row, a dashed separator and ``rows`` as a table.
+
+    Every column is made exactly as wide as the longest value it carries
+    in this call, its header counted, and each cell is padded with one
+    space on both sides.
+
+    Args:
+        headers: The labels of the columns, left to right.
+        rows: One tuple of cell values per data row; each as wide as
+            ``headers``.
+
+    Returns:
+        The rendered multi-line string without a trailing newline. When
+        ``rows`` is empty only the header and separator lines remain,
+        sized to the header labels.
+    """
+    table = (headers, *rows)
+    widths = tuple(
+        max(len(row[index]) for row in table) for index in range(len(headers))
+    )
+
+    def format_row(row: tuple[str, ...]) -> str:
+        return (
+            "|"
+            + "|".join(
+                f" {value:<{width}} " for value, width in zip(row, widths, strict=True)
+            )
+            + "|"
+        )
+
+    separator = "|" + "|".join("-" * (width + 2) for width in widths) + "|"
+    return "\n".join(
+        (format_row(headers), separator, *(format_row(row) for row in rows))
+    )
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
@@ -93,8 +141,35 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    rows = tuple(
+        (
+            str(product_id),
+            product[NAME_KEY],
+            str(product[PRICE_KEY]),
+            str(product[QUANTITY_KEY]),
+        )
+        for product_id, product in storage.items()
+    )
+    return _render_table(TABLE_HEADERS, rows)
+
+
+def _format_success_rate(success: int, fails: int) -> str:
+    """Format the share of successful calls as a percentage.
+
+    Args:
+        success: The number of successful calls.
+        fails: The number of failed calls.
+
+    Returns:
+        ``success`` out of all calls as a percentage with exactly two
+        fractional digits and a ``%`` sign, halves rounded up. A function
+        that was never called yields ``0.00%`` rather than an error.
+    """
+    total = success + fails
+    if not total:
+        return "0.00%"
+    rate = Decimal(success * 100) / Decimal(total)
+    return f"{rate.quantize(_STATS_RATE_STEP, rounding=ROUND_HALF_UP)}%"
 
 
 def get_stats_str_representation(registry: Registry) -> str:
@@ -116,5 +191,13 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    rows = tuple(
+        (
+            key,
+            str(stats[SUCCESS_KEY]),
+            str(stats[FAILS_KEY]),
+            _format_success_rate(stats[SUCCESS_KEY], stats[FAILS_KEY]),
+        )
+        for key, stats in registry.items()
+    )
+    return _render_table(STATS_TABLE_HEADERS, rows)
