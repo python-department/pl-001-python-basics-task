@@ -2,8 +2,8 @@
 
 Running this module starts a read-eval-print loop over a single product
 store that lives in memory for the lifetime of the process. Every line
-typed at the prompt is stripped of surrounding whitespace and matched
-against the set of known commands:
+typed at the prompt is stripped of surrounding whitespace and matched,
+with a ``match`` statement, against the set of known commands:
 
 * ``help`` -- print the list of commands and what each one does;
 * ``exit`` -- leave the loop and end the program;
@@ -100,33 +100,33 @@ def run_command(storage: list[Product], line: str) -> bool:
             ``update`` does not parse as a decimal number.
     """
     words = line.split()
-    if words == ["help"]:
-        show_help()
-    elif words == ["exit"]:
-        return False
-    elif words == ["show"]:
-        print(get_storage_str_representation(storage))
-    elif len(words) >= 4 and words[0] == "create":
-        name, price, quantity = (
-            " ".join(words[1:-2]),
-            Decimal(words[-2]),
-            int(words[-1]),
-        )
-        print_result(create_product(storage, (name, price, quantity)))
-    elif len(words) == 2 and words[0] == "read":
-        print_result(read_product(storage, int(words[1])))
-    elif len(words) >= 5 and words[0] == "update":
-        product_id = int(words[1])
-        name, price, quantity = (
-            " ".join(words[2:-2]),
-            Decimal(words[-2]),
-            int(words[-1]),
-        )
-        print_result(update_product(storage, product_id, (name, price, quantity)))
-    elif len(words) == 2 and words[0] == "delete":
-        print_result(delete_product(storage, int(words[1])))
-    else:
-        print(f"{line!r} is not a command")
+    match words:
+        case ["help"]:
+            show_help()
+        case ["exit"]:
+            return False
+        case ["show"]:
+            print(get_storage_str_representation(storage))
+        case ["create", *name, price, quantity] if name:
+            fields = (
+                " ".join(name),
+                Decimal(price),
+                int(quantity),
+            )
+            print_result(create_product(storage, fields))
+        case ["read", product_id]:
+            print_result(read_product(storage, int(product_id)))
+        case ["update", product_id, *name, price, quantity] if name:
+            fields = (
+                " ".join(name),
+                Decimal(price),
+                int(quantity),
+            )
+            print_result(update_product(storage, int(product_id), fields))
+        case ["delete", product_id]:
+            print_result(delete_product(storage, int(product_id)))
+        case _:
+            print(f"{line!r} is not a command")
     return True
 
 
