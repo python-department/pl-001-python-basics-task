@@ -51,8 +51,6 @@ from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import get_stats_str_representation, get_storage_str_representation
 
 
-# TODO: задайте приглашение и текст справки (используйте своё решение части 4,
-# не забудьте добавить команду stats, см. TASK.md)
 PROMPT: Final[str] = "admin> "
 HELP_TEXT: Final[str] = """Available commands:
   help                                       show this message

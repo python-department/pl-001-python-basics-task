@@ -146,7 +146,7 @@ def get_stats_str_representation(registry: Registry) -> str:
     rows: list[list[str]] = []
     for name, value in registry.items():
         if value[SUCCESS_KEY] + value[FAILS_KEY] == 0:
-            share = 0
+            share = 0.0
         else:
             share = value[SUCCESS_KEY] / (value[SUCCESS_KEY] + value[FAILS_KEY]) * 100
         rate = f"{share:.2f}%"

@@ -31,9 +31,6 @@ TIMESTAMP_MS_MAX: Final[int] = (1 << TIMESTAMP_BITS) - 1
 NODE_ID_MAX: Final[int] = (1 << NODE_ID_BITS) - 1
 SEQUENCE_ID_MAX: Final[int] = (1 << SEQUENCE_ID_BITS) - 1
 
-# Здесь можно добавить собственные вспомогательные константы
-# (например, сдвиги полей при сборке идентификатора).
-
 # Shift amounts
 SEQUENCE_ID_SHIFT: Final[int] = 0
 NODE_ID_SHIFT: Final[int] = SEQUENCE_ID_BITS
