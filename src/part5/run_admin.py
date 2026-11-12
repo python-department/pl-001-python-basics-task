@@ -36,65 +36,100 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import InvalidOperation
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
 from .storage import Product
+from .constants import NAME_KEY, PRICE_KEY, QUANTITY_KEY
+from .crud import (
+    create_product, 
+    read_product, 
+    update_product, 
+    delete_product,
+    generate_snowflake_id, 
+    STATS_REGISTRY
+)
+from .utils import get_storage_str_representation, get_stats_str_representation
 
 
 # TODO: задайте приглашение и текст справки (используйте своё решение части 4,
 # не забудьте добавить команду stats, см. TASK.md)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """\
+Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+  stats                                      print call statistics of the CRUD commands
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
-    """Print the command reference to stdout.
-
-    The text is the module-level :data:`HELP_TEXT` constant, printed as
-    is: a heading, one line per command with a short description, and a
-    note on how multi-word names are parsed.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
-    """Print a CRUD result to stdout unless it is ``None``.
-
-    Args:
-        result: The value returned by a CRUD operation. ``None`` means the
-            operation already reported its own failure, so nothing is
-            printed in that case.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
+    if result is not None:
+        print(result)
+        return
 
 
 def run_command(
     storage: dict[int, Product], product_names: set[str], line: str
 ) -> bool:
-    """Parse one console line and carry out the command it names.
+    match line.split():
+        case ["read", prod_id]:
+            print_result(read_product(storage, int(prod_id)))
 
-    Args:
-        storage: The product store shared across the session; mutated in
-            place by the ``create``, ``update`` and ``delete`` commands.
-        product_names: The normalised names already in ``storage``; kept
-            in sync by the ``create``, ``update`` and ``delete`` commands.
-        line: One line of console input, already stripped of surrounding
-            whitespace.
+        case ["create", *name, price, quantity] if name:
+            name_str = " ".join(name)
+            fields_case = {
+                NAME_KEY: name_str,
+                PRICE_KEY: Decimal(price),
+                QUANTITY_KEY: int(quantity),
+            }
+            print_result(create_product(
+                storage,
+                product_names,
+                fields_case,
+                generate_id=generate_snowflake_id
+            ))
 
-    Returns:
-        ``True`` to keep the read-eval-print loop running, or ``False``
-        once the ``exit`` command has been seen. A line that is not a
-        known command prints a notice and still returns ``True``.
+        case ["update", prod_id, *name, price, quantity] if name:
+            name_str = " ".join(name)
+            fields_case = {
+                NAME_KEY: name_str,
+                PRICE_KEY: Decimal(price),
+                QUANTITY_KEY: int(quantity),
+            }
+            print_result(update_product(storage, product_names, int(prod_id), fields_case))
 
-    Raises:
-        ValueError: If the id or quantity argument of a CRUD command does
-            not parse as a base-10 integer.
-        decimal.InvalidOperation: If the price argument of ``create`` or
-            ``update`` does not parse as a decimal number.
-    """
-    # TODO: реализуйте функцию
-    return False
+        case ["delete", prod_id]:
+            print_result(delete_product(storage, product_names, int(prod_id)))
+
+        case ["exit"]:
+            return False
+
+        case ["help"]:
+            show_help()
+
+        case ["show"]:
+            print(get_storage_str_representation(storage))
+            
+        case ["stats"]:
+            print(get_stats_str_representation(STATS_REGISTRY))
+
+        case _:
+            print(f"'{line}' is not a command")
+
+    return True
 
 
 def main() -> None:

@@ -21,100 +21,118 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import (
+    Registry, 
+    SUCCESS_KEY,
+    FAILS_KEY,
+)
+from .storage import (
+    Product,
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+)
 
 
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 # TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ("command name", "success", "fails", "success rate")
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
+    true_price = price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return true_price
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
+    new_name = " ".join(name.split()).lower()
 
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return new_name
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    mx_len_id = len(TABLE_HEADERS[0])
+    mx_len_name = len(TABLE_HEADERS[1])
+    mx_len_price = len(TABLE_HEADERS[2])
+    mx_len_quantity = len(TABLE_HEADERS[3])
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    for key, prod in storage.items():
+        mx_len_id = max(mx_len_id, len(str(key)))
+        mx_len_name = max(mx_len_name, len(prod[NAME_KEY]))
+        mx_len_price = max(mx_len_price, len(str(prod[PRICE_KEY])))
+        mx_len_quantity = max(mx_len_quantity, len(str(prod[QUANTITY_KEY])))
 
-    Args:
-        storage: The product store to render.
+    s = (
+        f"| {TABLE_HEADERS[0]:<{mx_len_id}} "
+        f"| {TABLE_HEADERS[1]:<{mx_len_name}} "
+        f"| {TABLE_HEADERS[2]:<{mx_len_price}} "
+        f"| {TABLE_HEADERS[3]:<{mx_len_quantity}} |\n"
+        f"|{'-' * (mx_len_id + 2)}"
+        f"|{'-' * (mx_len_name + 2)}"
+        f"|{'-' * (mx_len_price + 2)}"
+        f"|{'-' * (mx_len_quantity + 2)}|"
+    )
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage``, in insertion order. When
-        ``storage`` is empty only the header and separator rows are
-        returned, sized to the header labels.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    for key, prod in storage.items():
+        s_new = (
+            f"\n| {key:<{mx_len_id}} "
+            f"| {prod[NAME_KEY]:<{mx_len_name}} "
+            f"| {prod[PRICE_KEY]!s:<{mx_len_price}} "
+            f"| {prod[QUANTITY_KEY]!s:<{mx_len_quantity}} |"
+        )
+        s += s_new
+    return s
 
 
 def get_stats_str_representation(registry: Registry) -> str:
-    """Render the call statistics as a text table with data-sized columns.
+    mx_len_com_name = len(STATS_TABLE_HEADERS[0])
+    len_second_col = len(STATS_TABLE_HEADERS[1])
+    len_third_col = len(STATS_TABLE_HEADERS[2])
+    len_fourth_col = len(STATS_TABLE_HEADERS[3])
+    for command in registry:
+        mx_len_com_name = max(mx_len_com_name, len(command))
 
-    The table has the columns named by :data:`STATS_TABLE_HEADERS` -- command
-    name, number of successful calls, number of failed calls and success
-    rate. It is laid out like the one from
-    :func:`get_storage_str_representation`: every column is as wide as the
-    longest value it carries, its header counted.
+    s = (
+        f"| {STATS_TABLE_HEADERS[0]:<{mx_len_com_name}} "
+        f"| {STATS_TABLE_HEADERS[1]:<{len_second_col}} "
+        f"| {STATS_TABLE_HEADERS[2]:<{len_third_col}} "
+        f"| {STATS_TABLE_HEADERS[3]:<{len_fourth_col}} |\n"
+        f"|{'-' * (mx_len_com_name + 2)}"
+        f"|{'-' * (len_second_col + 2)}"
+        f"|{'-' * (len_third_col + 2)}"
+        f"|{'-' * (len_fourth_col + 2)}|"
+    )
 
-    Args:
-        registry: The statistics to render, a mapping of command name to the
-            counters kept by :func:`~src.part5.decorators.collect_stats`.
+    for command, stats in registry.items():
+        success = stats[SUCCESS_KEY]
+        fails = stats[FAILS_KEY]
+        total = success + fails
+        if total > 0:
+            perc = f"{(success / total * 100):.2f}%"
+        else:
+            perc = "0.00%"
+        
+        s += (
+            f"\n| {command:<{mx_len_com_name}} "
+            f"| {success:<{len_second_col}} "
+            f"| {fails:<{len_third_col}} "
+            f"| {perc:<{len_fourth_col}} |"
+        )
+        
+    return s
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then one
-        row per registry entry in insertion order. When ``registry`` is
-        empty only the header and separator rows are returned, sized to the
-        header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    

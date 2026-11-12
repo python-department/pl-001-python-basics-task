@@ -31,4 +31,4 @@ TIMESTAMP_MS_MAX: Final[int] = 2**TIMESTAMP_BITS - 1
 NODE_ID_MAX: Final[int] = 2**NODE_ID_BITS - 1
 SEQUENCE_ID_MAX: Final[int] = 2**SEQUENCE_ID_BITS - 1
 
-# Здесь можно добавить собственные вспомогательные константы
+

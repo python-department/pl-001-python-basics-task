@@ -39,153 +39,126 @@ from collections.abc import Callable
 from typing import Any, Final
 
 from .decorators import Registry
-from .storage import Product
+from .storage import (
+    Product,
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+)
+from .snowflake import get_snowflake_id_generator
+from .utils import normalize_product_name, normalize_price
+from .decorators import collect_stats
 
 
 STATS_REGISTRY: Final[Registry] = {}
 
 # TODO: задайте ключи операций в реестре, см. TASK.md
-CREATE_KEY: Final[str] = ""
-READ_KEY: Final[str] = ""
-UPDATE_KEY: Final[str] = ""
-DELETE_KEY: Final[str] = ""
+CREATE_KEY: Final[str] = "create"
+READ_KEY: Final[str] = "read"
+UPDATE_KEY: Final[str] = "update"
+DELETE_KEY: Final[str] = "delete"
 
 # TODO: при необходимости заведите здесь общий генератор Snowflake-идентификаторов
 # для generate_snowflake_id (см. TASK.md)
+global_generator = get_snowflake_id_generator()
 
 
 def generate_snowflake_id() -> int | None:
-    """Issue the next product identifier from the shared Snowflake generator.
-
-    This is the identifier source callers pass to :func:`create_product`.
-
-    Returns:
-        A positive 63-bit Snowflake integer, or ``None`` (after a message
-        has been printed) when no identifier can be issued right now -- see
-        :func:`~src.part5.snowflake.get_snowflake_id_generator` for the
-        cases.
-    """
-    # TODO: реализуйте функцию
-    return 0
+    if global_generator is None:
+        return None
+    
+    return global_generator()
 
 
-# TODO: оберните операцию декоратором collect_stats
+@collect_stats(CREATE_KEY, STATS_REGISTRY)
 def create_product(
     storage: dict[int, Product],
     product_names: set[str],
     fields: dict[str, Any],
     generate_id: Callable[[], int | None],
 ) -> int | None:
-    """Add a new product to ``storage`` and return its new identifier.
+    
+    form_name = normalize_product_name(fields[NAME_KEY])
+    if not form_name:
+            print("product name must not be blank")
+            return None
 
-    Args:
-        storage: The product store to add to; modified in place on
-            success.
-        product_names: The normalised names already in ``storage``; the
-            new name is added to it in place on success.
-        fields: A dictionary with the ``name``, ``price`` and ``quantity``
-            keys (see :data:`~src.part5.storage.NAME_KEY`,
-            :data:`~src.part5.storage.PRICE_KEY` and
-            :data:`~src.part5.storage.QUANTITY_KEY`) describing the
-            product. ``name`` is normalised (surrounding whitespace
-            stripped, lower-cased) before it is stored or compared.
-            ``price`` is a :class:`~decimal.Decimal` amount and is rounded
-            to the stored money precision before it is saved.
-        generate_id: A zero-argument function returning the identifier for
-            the new product, or ``None`` if it cannot issue one (for
-            example :func:`generate_snowflake_id`). It is only expected to
-            return an identifier that is not yet a key of ``storage``.
+    if form_name in product_names:
+            print(f"product name {form_name!r} is already taken")
+            return None
 
-    Returns:
-        The identifier returned by ``generate_id`` for the new product, or
-        ``None`` when ``name`` is blank once normalised, a product with
-        the same normalised name already exists, or ``generate_id``
-        returned ``None``. In the ``None`` case ``storage`` and
-        ``product_names`` are left unchanged and an explanatory message is
-        printed (for the last case, by ``generate_id`` itself).
-    """
-    # TODO: реализуйте функцию
-    return 0
+    new_id = generate_id()
+    if new_id is None:
+        return None
+    
+    form_price = normalize_price(fields[PRICE_KEY])
+    new_fields = {
+        NAME_KEY: form_name,
+        PRICE_KEY: form_price,
+        QUANTITY_KEY: fields[QUANTITY_KEY],
+    }
+    storage[new_id] = new_fields
+    product_names.add(form_name)
+
+    return new_id
 
 
-# TODO: оберните операцию декоратором collect_stats
+@collect_stats(READ_KEY, STATS_REGISTRY)
 def read_product(storage: dict[int, Product], product_id: int) -> Product | None:
-    """Return the product stored under ``product_id``.
-
-    Args:
-        storage: The product store to search.
-        product_id: The identifier to look up.
-
-    Returns:
-        The matching product record, or ``None`` when no product carries
-        that identifier (a message is printed in that case).
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return {}
+    if product_id in storage:
+        return storage[product_id]
+    
+    print(f"no product with id {product_id}")
+    return None
 
 
-# TODO: оберните операцию декоратором collect_stats
+@collect_stats(UPDATE_KEY, STATS_REGISTRY)
 def update_product(
     storage: dict[int, Product],
     product_names: set[str],
     product_id: int,
     fields: dict[str, Any],
 ) -> Product | None:
-    """Overwrite the fields of the product stored under ``product_id``.
-
-    The identifier itself is preserved. ``fields`` may carry any subset of
-    ``name``, ``price`` and ``quantity``; a key that is missing keeps the
-    value the product already has, so a caller can update a single field
-    without repeating the other two.
-
-    Args:
-        storage: The product store to modify; the matching record is
-            updated in place on success.
-        product_names: The normalised names already in ``storage``; on a
-            successful rename the old name is removed from it and the new
-            one added.
-        product_id: The identifier of the product to change.
-        fields: A dictionary with any of the ``name``, ``price`` and
-            ``quantity`` keys (see :data:`~src.part5.storage.NAME_KEY`,
-            :data:`~src.part5.storage.PRICE_KEY` and
-            :data:`~src.part5.storage.QUANTITY_KEY`) holding the new
-            values. ``price`` is a :class:`~decimal.Decimal` amount and is
-            rounded to the stored money precision before it is saved.
-            Mutated in place: a ``name`` or ``price`` value present in
-            ``fields`` is overwritten with its normalised form.
-
-    Returns:
-        The updated product record, or ``None`` when ``name`` is present
-        and blank once normalised, no product carries that identifier, or
-        the normalised name is already taken by another product. In every
-        ``None`` case ``storage`` and ``product_names`` are left unchanged
-        and an explanatory message is printed. Renaming a product to its
-        own current name is allowed.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return {}
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    curr_product = storage[product_id]
+    curr_name = curr_product[NAME_KEY]
+    
+    if NAME_KEY in fields:
+        form_name = normalize_product_name(fields[NAME_KEY])
+        if not form_name:
+            print("product name must not be blank")
+            return None
+    
+        if form_name != curr_name and form_name in product_names:
+            print(f"product name {form_name!r} is already taken")
+            return None
+    
+        fields[NAME_KEY] = form_name
+    
+    if PRICE_KEY in fields:
+        form_price = normalize_price(fields[PRICE_KEY])
+        fields[PRICE_KEY] = form_price
+    
+    if NAME_KEY in fields and fields[NAME_KEY] != curr_name:
+        product_names.remove(curr_name)
+        product_names.add(fields[NAME_KEY])
+    
+    curr_product.update(fields)
+    return curr_product
 
 
-# TODO: оберните операцию декоратором collect_stats
+@collect_stats(DELETE_KEY, STATS_REGISTRY)
 def delete_product(
     storage: dict[int, Product],
     product_names: set[str],
     product_id: int,
 ) -> int | None:
-    """Remove the product stored under ``product_id`` from ``storage``.
-
-    Args:
-        storage: The product store to remove from; modified in place on
-            success.
-        product_names: The normalised names already in ``storage``; the
-            departing product's name is removed from it in place on
-            success.
-        product_id: The identifier of the product to remove.
-
-    Returns:
-        ``product_id`` when a product was removed, or ``None`` when no
-        product carried that identifier (``storage`` and ``product_names``
-        are left unchanged and a message is printed).
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return 0
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    
+    product = storage.pop(product_id)
+    product_names.remove(product[NAME_KEY])
+    return product_id
