@@ -14,10 +14,19 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-from collections.abc import Callable
 import time
+from collections.abc import Callable
 
-from .constants import EPOCH_MS_DEFAULT, NODE_ID_DEFAULT, NODE_ID_MAX, NODE_SHIFT, SEQUENCE_ID_MAX, SEQUENCE_SHIFT, TIMESTAMP_MS_MAX, TIMESTAMP_SHIFT
+from .constants import (
+    EPOCH_MS_DEFAULT,
+    NODE_ID_DEFAULT,
+    NODE_ID_MAX,
+    NODE_SHIFT,
+    SEQUENCE_ID_MAX,
+    SEQUENCE_SHIFT,
+    TIMESTAMP_MS_MAX,
+    TIMESTAMP_SHIFT,
+)
 
 
 def read_current_millis(epoch_ms: int) -> int:
@@ -135,7 +144,9 @@ def get_snowflake_id_generator(
             return None
 
         if current_millis > TIMESTAMP_MS_MAX:
-            print(f"timestamp {current_millis - TIMESTAMP_MS_MAX} ms overflows {TIMESTAMP_MS_MAX} ms")
+            print(
+                f"timestamp {current_millis - TIMESTAMP_MS_MAX} ms overflows {TIMESTAMP_MS_MAX} ms"
+            )
             return None
 
         snowflake_id = (
@@ -143,8 +154,7 @@ def get_snowflake_id_generator(
             | node_id << NODE_SHIFT
             | sequence_id << SEQUENCE_SHIFT
         )
-        
-        return snowflake_id
 
+        return snowflake_id
 
     return generate_id

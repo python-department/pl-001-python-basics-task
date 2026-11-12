@@ -53,9 +53,10 @@ def collect_stats[**P, R](
         ``None``. The decorated function has the same signature, name and
         docstring as the original (see :func:`functools.wraps`).
     """
+
     def decorator(function: Callable[..., Any]) -> Callable[..., Any]:
         if key in registry:
-            print(f"stats key {repr(key)} is already registered")
+            print(f"stats key {key!r} is already registered")
             return function
 
         registry[key] = {SUCCESS_KEY: 0, FAILS_KEY: 0}
@@ -71,5 +72,5 @@ def collect_stats[**P, R](
             return res
 
         return wrapper
-        
+
     return decorator

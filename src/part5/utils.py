@@ -21,11 +21,11 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import ROUND_HALF_UP, Decimal
 import re
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Final
 
-from .decorators import Registry, SUCCESS_KEY, FAILS_KEY
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
 from .storage import Product
 
 
@@ -38,9 +38,15 @@ PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ("command name", "success", "fails", "success rate")
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 SUCCESS_RATE = "success rate"
+
 
 def normalize_price(price: Decimal) -> Decimal:
     """Round a price to the precision every stored record uses.
@@ -83,7 +89,10 @@ def get_columns_values(headers: tuple[str, ...]) -> list[list[str]]:
     """
     return [[column_header] for column_header in headers]
 
-def fill_columns_values(storage: dict[int, Product], columns_values: list[list[str]]) -> None:
+
+def fill_columns_values(
+    storage: dict[int, Product], columns_values: list[list[str]]
+) -> None:
     """Fill columns_values by values in storage
 
     Args:
@@ -94,6 +103,7 @@ def fill_columns_values(storage: dict[int, Product], columns_values: list[list[s
         column_fields = (product_id, *product.values())
         for col_ind in range(len(column_fields)):
             columns_values[col_ind].append(str(column_fields[col_ind]))
+
 
 def get_width_columns(columns_values: list[list[str]]) -> list[int]:
     """Getter for width of columns of str representation
@@ -106,7 +116,13 @@ def get_width_columns(columns_values: list[list[str]]) -> list[int]:
     """
     return [len(max(column_values, key=len)) for column_values in columns_values]
 
-def get_row_str_representation(first_row : int, last_row: int, columns_values: list[list[str]], width_columns: list[int]) -> str:
+
+def get_row_str_representation(
+    first_row: int,
+    last_row: int,
+    columns_values: list[list[str]],
+    width_columns: list[int],
+) -> str:
     """Get row representation by str
 
     Args:
@@ -128,7 +144,10 @@ def get_row_str_representation(first_row : int, last_row: int, columns_values: l
         output_str += "\n"
     return output_str
 
-def get_dashe_separator_row(columns_values: list[list[str]], width_columns: list[int]) -> str:
+
+def get_dashe_separator_row(
+    columns_values: list[list[str]], width_columns: list[int]
+) -> str:
     """_summary_
 
     Args:
@@ -144,6 +163,7 @@ def get_dashe_separator_row(columns_values: list[list[str]], width_columns: list
     output_str += "\n"
     return output_str
 
+
 def get_str_representation(data: dict[Any, Any], headers: tuple[str, ...]) -> str:
     """Render the call statistics as a text table with data-sized columns.
 
@@ -152,7 +172,7 @@ def get_str_representation(data: dict[Any, Any], headers: tuple[str, ...]) -> st
         headers (tuple[str, ...]): first row
 
     Returns:
-        str: 
+        str:
             A multi-line string: a header row, a dashed separator row, then one
             row per registry entry in insertion order. When ``registry`` is
             empty only the header and separator rows are returned, sized to the
@@ -164,7 +184,9 @@ def get_str_representation(data: dict[Any, Any], headers: tuple[str, ...]) -> st
     output_str: str = ""
     output_str += get_row_str_representation(0, 0, columns_values, width_columns)
     output_str += get_dashe_separator_row(columns_values, width_columns)
-    output_str += get_row_str_representation(1, len(data), columns_values, width_columns)
+    output_str += get_row_str_representation(
+        1, len(data), columns_values, width_columns
+    )
     return output_str.removesuffix("\n")
 
 
@@ -188,7 +210,8 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
     """
     return get_str_representation(storage, TABLE_HEADERS)
 
-def get_success_rate(success_calls: int, fail_calls: int) -> int:
+
+def get_success_rate(success_calls: int, fail_calls: int) -> str:
     """Getter for success rate
 
     Args:
@@ -201,6 +224,7 @@ def get_success_rate(success_calls: int, fail_calls: int) -> int:
     if not success_calls and not fail_calls:
         return f"{0:.2f}"
     return f"{success_calls / (success_calls + fail_calls) * 100:.2f}%"
+
 
 def get_stats_str_representation(registry: Registry) -> str:
     """Render the call statistics as a text table with data-sized columns.
@@ -222,8 +246,9 @@ def get_stats_str_representation(registry: Registry) -> str:
         header labels.
     """
     update_registery = {
-        crud_op : 
-        stats | {SUCCESS_RATE : get_success_rate(stats[SUCCESS_KEY], stats[FAILS_KEY])} for crud_op, stats in registry.items()
+        crud_op: stats
+        | {SUCCESS_RATE: get_success_rate(stats[SUCCESS_KEY], stats[FAILS_KEY])}
+        for crud_op, stats in registry.items()
     }
-    
+
     return get_str_representation(update_registery, STATS_TABLE_HEADERS)

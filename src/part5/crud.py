@@ -38,9 +38,8 @@ are shared by every store.
 from collections.abc import Callable
 from typing import Any, Final
 
-from .snowflake import decode_node_id, decode_sequence_id, get_snowflake_id_generator
-
 from .decorators import Registry, collect_stats
+from .snowflake import get_snowflake_id_generator
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import normalize_price, normalize_product_name
 
@@ -53,6 +52,7 @@ UPDATE_KEY: Final[str] = "update"
 DELETE_KEY: Final[str] = "delete"
 
 snowflake_generator = get_snowflake_id_generator()
+
 
 def generate_snowflake_id() -> int | None:
     """Issue the next product identifier from the shared Snowflake generator.
@@ -67,7 +67,7 @@ def generate_snowflake_id() -> int | None:
     """
     if snowflake_generator is None:
         return None
-    
+
     return snowflake_generator()
 
 
@@ -107,7 +107,7 @@ def create_product(
         printed (for the last case, by ``generate_id`` itself).
     """
     name, price, quantity = fields.values()
-    
+
     name = normalize_product_name(name)
 
     if not name:
@@ -194,8 +194,8 @@ def update_product(
         own current name is allowed.
     """
     if product_id not in storage:
-            print(f"no product with id {product_id}")
-            return None
+        print(f"no product with id {product_id}")
+        return None
 
     product = storage[product_id]
 

@@ -36,13 +36,20 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import Decimal, InvalidOperation
 import re
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
+from .crud import (
+    STATS_REGISTRY,
+    create_product,
+    delete_product,
+    generate_snowflake_id,
+    read_product,
+    update_product,
+)
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import get_stats_str_representation, get_storage_str_representation
-from .crud import STATS_REGISTRY, create_product, delete_product, generate_snowflake_id, read_product, update_product
 
 
 PROMPT: Final[str] = "admin> "
@@ -129,7 +136,7 @@ def run_command(
                         PRICE_KEY: Decimal(price),
                         QUANTITY_KEY: int(quantity),
                     },
-                    generate_snowflake_id()
+                    generate_snowflake_id,
                 )
             )
             return True

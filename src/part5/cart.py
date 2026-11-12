@@ -9,8 +9,9 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import QUANTITY_KEY, Product
 from .crud import read_product, update_product
+from .storage import QUANTITY_KEY, Product
+
 
 def add_to_cart(
     storage: dict[int, Product],
@@ -45,7 +46,7 @@ def add_to_cart(
         request.
     """
     searched_product = read_product(storage, product_id)
-    
+
     if not searched_product:
         return None
 
