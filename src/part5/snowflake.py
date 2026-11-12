@@ -139,7 +139,7 @@ def get_snowflake_id_generator(
             current_millis = last_millis
             sequence_id += 1
 
-        if sequence_id > SEQUENCE_ID_MAX + 1:
+        if sequence_id > SEQUENCE_ID_MAX:
             print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}")
             return None
 
