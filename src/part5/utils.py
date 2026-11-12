@@ -25,15 +25,15 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .decorators import (
-    Registry, 
-    SUCCESS_KEY,
     FAILS_KEY,
+    SUCCESS_KEY,
+    Registry,
 )
 from .storage import (
-    Product,
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
+    Product,
 )
 
 
@@ -46,7 +46,12 @@ PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
 TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 # TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ("command name", "success", "fails", "success rate")
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -125,14 +130,12 @@ def get_stats_str_representation(registry: Registry) -> str:
             perc = f"{(success / total * 100):.2f}%"
         else:
             perc = "0.00%"
-        
+
         s += (
             f"\n| {command:<{mx_len_com_name}} "
             f"| {success:<{len_second_col}} "
             f"| {fails:<{len_third_col}} "
             f"| {perc:<{len_fourth_col}} |"
         )
-        
-    return s
 
-    
+    return s

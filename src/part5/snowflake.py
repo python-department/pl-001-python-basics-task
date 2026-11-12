@@ -18,7 +18,7 @@ import time
 from collections.abc import Callable
 
 from .constants import (
-    EPOCH_MS_DEFAULT, 
+    EPOCH_MS_DEFAULT,
     NODE_ID_BITS,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
@@ -26,7 +26,6 @@ from .constants import (
     SEQUENCE_ID_MAX,
     TIMESTAMP_MS_MAX,
 )
-
 
 
 def read_current_millis(epoch_ms: int) -> int:
@@ -53,6 +52,7 @@ def decode_sequence_id(snowflake_id: int) -> int:
 
     return sequence_id
 
+
 def get_snowflake_id_generator(
     node_id: int = NODE_ID_DEFAULT,
     epoch_ms: int = EPOCH_MS_DEFAULT,
@@ -68,13 +68,13 @@ def get_snowflake_id_generator(
     sequence_id = 0
     previous_time = -1
 
-    def generator():
+    def generator() -> int | None:
         nonlocal sequence_id, previous_time
         current_time = read_current_millis(epoch_ms)
         if current_time > TIMESTAMP_MS_MAX:
             print(f"timestamp {current_time} ms overflows {TIMESTAMP_MS_MAX} ms")
             return None
-        
+
         if current_time != previous_time:
             sequence_id = 0
             previous_time = current_time

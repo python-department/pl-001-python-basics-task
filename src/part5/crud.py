@@ -38,16 +38,10 @@ are shared by every store.
 from collections.abc import Callable
 from typing import Any, Final
 
-from .decorators import Registry
-from .storage import (
-    Product,
-    NAME_KEY,
-    PRICE_KEY,
-    QUANTITY_KEY,
-)
+from .decorators import Registry, collect_stats
 from .snowflake import get_snowflake_id_generator
-from .utils import normalize_product_name, normalize_price
-from .decorators import collect_stats
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import normalize_price, normalize_product_name
 
 
 STATS_REGISTRY: Final[Registry] = {}
@@ -66,7 +60,7 @@ global_generator = get_snowflake_id_generator()
 def generate_snowflake_id() -> int | None:
     if global_generator is None:
         return None
-    
+
     return global_generator()
 
 
@@ -77,20 +71,20 @@ def create_product(
     fields: dict[str, Any],
     generate_id: Callable[[], int | None],
 ) -> int | None:
-    
+
     form_name = normalize_product_name(fields[NAME_KEY])
     if not form_name:
-            print("product name must not be blank")
-            return None
+        print("product name must not be blank")
+        return None
 
     if form_name in product_names:
-            print(f"product name {form_name!r} is already taken")
-            return None
+        print(f"product name {form_name!r} is already taken")
+        return None
 
     new_id = generate_id()
     if new_id is None:
         return None
-    
+
     form_price = normalize_price(fields[PRICE_KEY])
     new_fields = {
         NAME_KEY: form_name,
@@ -107,7 +101,7 @@ def create_product(
 def read_product(storage: dict[int, Product], product_id: int) -> Product | None:
     if product_id in storage:
         return storage[product_id]
-    
+
     print(f"no product with id {product_id}")
     return None
 
@@ -124,27 +118,27 @@ def update_product(
         return None
     curr_product = storage[product_id]
     curr_name = curr_product[NAME_KEY]
-    
+
     if NAME_KEY in fields:
         form_name = normalize_product_name(fields[NAME_KEY])
         if not form_name:
             print("product name must not be blank")
             return None
-    
+
         if form_name != curr_name and form_name in product_names:
             print(f"product name {form_name!r} is already taken")
             return None
-    
+
         fields[NAME_KEY] = form_name
-    
+
     if PRICE_KEY in fields:
         form_price = normalize_price(fields[PRICE_KEY])
         fields[PRICE_KEY] = form_price
-    
+
     if NAME_KEY in fields and fields[NAME_KEY] != curr_name:
         product_names.remove(curr_name)
         product_names.add(fields[NAME_KEY])
-    
+
     curr_product.update(fields)
     return curr_product
 
@@ -158,7 +152,7 @@ def delete_product(
     if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
-    
+
     product = storage.pop(product_id)
     product_names.remove(product[NAME_KEY])
     return product_id

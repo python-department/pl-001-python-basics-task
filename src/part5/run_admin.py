@@ -39,17 +39,16 @@ is left untouched and the loop keeps running; only ``exit`` stops it.
 from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .storage import Product
-from .constants import NAME_KEY, PRICE_KEY, QUANTITY_KEY
 from .crud import (
-    create_product, 
-    read_product, 
-    update_product, 
+    STATS_REGISTRY,
+    create_product,
     delete_product,
-    generate_snowflake_id, 
-    STATS_REGISTRY
+    generate_snowflake_id,
+    read_product,
+    update_product,
 )
-from .utils import get_storage_str_representation, get_stats_str_representation
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import get_stats_str_representation, get_storage_str_representation
 
 
 # TODO: задайте приглашение и текст справки (используйте своё решение части 4,
@@ -95,12 +94,14 @@ def run_command(
                 PRICE_KEY: Decimal(price),
                 QUANTITY_KEY: int(quantity),
             }
-            print_result(create_product(
-                storage,
-                product_names,
-                fields_case,
-                generate_id=generate_snowflake_id
-            ))
+            print_result(
+                create_product(
+                    storage,
+                    product_names,
+                    fields_case,
+                    generate_id=generate_snowflake_id,
+                )
+            )
 
         case ["update", prod_id, *name, price, quantity] if name:
             name_str = " ".join(name)
@@ -109,7 +110,9 @@ def run_command(
                 PRICE_KEY: Decimal(price),
                 QUANTITY_KEY: int(quantity),
             }
-            print_result(update_product(storage, product_names, int(prod_id), fields_case))
+            print_result(
+                update_product(storage, product_names, int(prod_id), fields_case)
+            )
 
         case ["delete", prod_id]:
             print_result(delete_product(storage, product_names, int(prod_id)))
@@ -122,7 +125,7 @@ def run_command(
 
         case ["show"]:
             print(get_storage_str_representation(storage))
-            
+
         case ["stats"]:
             print(get_stats_str_representation(STATS_REGISTRY))
 

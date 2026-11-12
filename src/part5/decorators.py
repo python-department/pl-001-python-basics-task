@@ -30,14 +30,15 @@ def collect_stats[**P, R](
     key: str, registry: Registry
 ) -> Callable[[Callable[P, R | None]], Callable[P, R | None]]:
 
-    def decorator(func):
+    def decorator(func: Callable[P, R | None]) -> Callable[P, R | None]:
         if key in registry:
             print(f"stats key {key}!r is already registered")
             return func
 
         registry[key] = {SUCCESS_KEY: 0, FAILS_KEY: 0}
+
         @wraps(func)
-        def do_check(*args, **kwargs):
+        def do_check(*args: P.args, **kwargs: P.kwargs) -> R | None:
             result = func(*args, **kwargs)
             if result is None:
                 registry[key][FAILS_KEY] += 1
@@ -46,5 +47,5 @@ def collect_stats[**P, R](
             return result
 
         return do_check
-        
+
     return decorator
