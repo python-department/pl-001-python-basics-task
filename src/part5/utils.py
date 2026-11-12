@@ -25,8 +25,8 @@ from decimal import ROUND_HALF_UP, Decimal
 import re
 from typing import Any, Final
 
-from decorators import Registry, SUCCESS_KEY, FAILS_KEY
-from storage import Product
+from .decorators import Registry, SUCCESS_KEY, FAILS_KEY
+from .storage import Product
 
 
 # Number of fractional digits every stored price is rounded to.
