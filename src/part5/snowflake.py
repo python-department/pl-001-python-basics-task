@@ -17,7 +17,7 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 from collections.abc import Callable
 import time
 
-from constants import EPOCH_MS_DEFAULT, NODE_ID_DEFAULT, NODE_ID_MAX, NODE_SHIFT, SEQUENCE_ID_MAX, SEQUENCE_SHIFT, TIMESTAMP_MS_MAX, TIMESTAMP_SHIFT
+from .constants import EPOCH_MS_DEFAULT, NODE_ID_DEFAULT, NODE_ID_MAX, NODE_SHIFT, SEQUENCE_ID_MAX, SEQUENCE_SHIFT, TIMESTAMP_MS_MAX, TIMESTAMP_SHIFT
 
 
 def read_current_millis(epoch_ms: int) -> int:
