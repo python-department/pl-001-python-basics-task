@@ -21,23 +21,26 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
+from re import sub
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -50,8 +53,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,11 +70,16 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return sub(r"\s+", " ", name.strip()).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def format_row(values: list[str] | tuple[str, ...], widths: list[int]) -> str:
+    cells = [values[i].ljust(widths[i]) for i in range(len(widths))]
+    return "| " + " | ".join(cells) + " |"
+
+
+def separator(widths: list[int]) -> str:
+    return "|" + "|".join(["-" * (w + 2) for w in widths]) + "|"
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
@@ -93,8 +100,28 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    rows: list[list[str]] = []
+    for ID, value in storage.items():
+        product: Product = value
+        rows.append(
+            [
+                str(ID),
+                product[NAME_KEY],
+                str(product[PRICE_KEY]),
+                str(product[QUANTITY_KEY]),
+            ]
+        )
+
+    widths: list[int] = [len(h) for h in TABLE_HEADERS]
+    for row in rows:
+        for i in range(len(row)):
+            widths[i] = max(widths[i], len(row[i]))
+
+    lines = [format_row(TABLE_HEADERS, widths), separator(widths)]
+    for row in rows:
+        lines.append(format_row(row, widths))
+
+    return "\n".join(lines)
 
 
 def get_stats_str_representation(registry: Registry) -> str:
@@ -116,5 +143,22 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    rows: list[list[str]] = []
+    for name, value in registry.items():
+        if value[SUCCESS_KEY] + value[FAILS_KEY] == 0:
+            share = 0.0
+        else:
+            share = value[SUCCESS_KEY] / (value[SUCCESS_KEY] + value[FAILS_KEY]) * 100
+        rate = f"{share:.2f}%"
+        rows.append([name, str(value[SUCCESS_KEY]), str(value[FAILS_KEY]), rate])
+
+    widths: list[int] = [len(h) for h in STATS_TABLE_HEADERS]
+    for row in rows:
+        for i in range(len(row)):
+            widths[i] = max(widths[i], len(row[i]))
+
+    lines = [format_row(STATS_TABLE_HEADERS, widths), separator(widths)]
+    for row in rows:
+        lines.append(format_row(row, widths))
+
+    return "\n".join(lines)
