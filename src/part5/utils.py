@@ -222,7 +222,7 @@ def get_success_rate(success_calls: int, fail_calls: int) -> str:
         int: success rate
     """
     if not success_calls and not fail_calls:
-        return f"{0:.2f}"
+        return f"{0:.2f}%"
     return f"{success_calls / (success_calls + fail_calls) * 100:.2f}%"
 
 

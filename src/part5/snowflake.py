@@ -144,9 +144,7 @@ def get_snowflake_id_generator(
             return None
 
         if current_millis > TIMESTAMP_MS_MAX:
-            print(
-                f"timestamp {current_millis - TIMESTAMP_MS_MAX} ms overflows {TIMESTAMP_MS_MAX} ms"
-            )
+            print(f"timestamp {current_millis} ms overflows {TIMESTAMP_MS_MAX} ms")
             return None
 
         snowflake_id = (

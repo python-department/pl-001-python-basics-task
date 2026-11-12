@@ -106,22 +106,19 @@ def create_product(
         ``product_names`` are left unchanged and an explanatory message is
         printed (for the last case, by ``generate_id`` itself).
     """
-    name, price, quantity = fields.values()
-
-    name = normalize_product_name(name)
+    name = normalize_product_name(fields[NAME_KEY])
+    price = fields[PRICE_KEY]
+    quantity = fields[QUANTITY_KEY]
 
     if not name:
         print("product name must not be blank")
         return None
 
     if name in product_names:
-        print(f"product name {name} is already taken")
+        print(f"product name '{name}' is already taken")
         return None
 
     product_id = generate_id()
-
-    if product_id is None:
-        return None
 
     if product_id is None:
         return None

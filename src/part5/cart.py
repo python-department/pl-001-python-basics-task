@@ -47,6 +47,10 @@ def add_to_cart(
     """
     searched_product = read_product(storage, product_id)
 
+    if quantity <= 0:
+        print("quantity must be positive")
+        return None
+
     if not searched_product:
         return None
 
@@ -102,6 +106,10 @@ def remove_from_cart(
     """
     if product_id not in cart:
         print(f"product {product_id} is not in the cart")
+        return None
+
+    if quantity <= 0:
+        print("quantity must be positive")
         return None
 
     cart_quantity = cart[product_id]
