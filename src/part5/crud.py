@@ -247,11 +247,10 @@ def delete_product(
         are left unchanged and a message is printed).
     """
     if product_id not in storage:
-            print(f"no product with id {product_id}")
-            return None
-    
+        print(f"no product with id {product_id}")
+        return None
+
     product_names.remove(storage[product_id][NAME_KEY])
     del storage[product_id]
 
     return product_id
-    
