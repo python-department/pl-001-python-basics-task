@@ -1,14 +1,14 @@
 from decimal import Decimal
 from typing import Final
 
-from crud import (
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
-from storage import Product
-from utils import get_storage_str_representation
+from .storage import Product
+from .utils import get_storage_str_representation
 
 
 PROMPT: Final[str] = "admin> "
@@ -36,8 +36,8 @@ def print_result(result: object) -> None:
 
 
 def run_command(storage: list[Product], line: str) -> bool:
-    line = line.split()
-    match line:
+    words = line.split()
+    match words:
         case ["help"]:
             show_help()
             return True
@@ -51,11 +51,13 @@ def run_command(storage: list[Product], line: str) -> bool:
             *_,
             price,
             quantity,
-        ]:  # попробовать заменить на line[-1] и line[-2] price и quantity
-            name = " ".join(line[1:-2])
-            pocket = create_product(storage, (name, Decimal(price), int(quantity)))
-            if pocket:
-                print(pocket)
+        ]:
+            name = " ".join(words[1:-2])
+            pocket_create = create_product(
+                storage, (name, Decimal(price), int(quantity))
+            )
+            if pocket_create:
+                print(pocket_create)
             return True
         case ["read", id_num]:
             output = read_product(storage, int(id_num))
@@ -68,22 +70,22 @@ def run_command(storage: list[Product], line: str) -> bool:
             *_,
             price,
             quantity,
-        ]:  # попробовать заменить на line[-1] и line[-2] price и quantity
-            name = " ".join(line[2:-2])
-            pocket = update_product(
+        ]:
+            name = " ".join(words[2:-2])
+            pocket_update = update_product(
                 storage, int(id_num), (name, Decimal(price), int(quantity))
             )
-            if pocket:
-                print(pocket)
+            if pocket_update:
+                print(pocket_update)
             return True
         case ["delete", id_num]:
-            pocket = delete_product(storage, int(id_num))
-            if pocket:
-                print(pocket)
+            pocket_delete = delete_product(storage, int(id_num))
+            if pocket_delete:
+                print(pocket_delete)
             return True
         case _:
-            line = " ".join(line)
-            print(f"'{line}' is not a command")
+            sentance = " ".join(words)
+            print(f"'{sentance}' is not a command")
             return True
 
 

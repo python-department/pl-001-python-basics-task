@@ -1,19 +1,19 @@
 import uuid
 from typing import Any
 
-from storage import (
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     Product,
 )
-from utils import normalize_price, normalize_product_name
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id() -> str:
     return str(uuid.uuid4())
 
 
-def name_check(name: str, product_names) -> None | str:
+def name_check(name: str, product_names: set[str]) -> bool | str:
     name = normalize_product_name(name)
     if name == "":
         print("product name must not be blank")
@@ -24,7 +24,7 @@ def name_check(name: str, product_names) -> None | str:
     return name
 
 
-def id_check(num_id: int, storage: dict[str, Product]):
+def id_check(num_id: str, storage: dict[str, Product]) -> bool:
     if num_id not in storage:
         print(f"no product with id {num_id}")
         return False

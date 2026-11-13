@@ -1,12 +1,12 @@
 from decimal import Decimal
 
-from storage import (
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from utils import normalize_price, normalize_product_name
+from .utils import normalize_price, normalize_product_name
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -53,7 +53,7 @@ def update_product(
     if norm_name == "":
         print("product name must not be blank")
         return None
-    prod = 0
+    prod = None
     for i in range(len(storage)):
         if (
             storage[i][NAME_INDEX] == norm_name
@@ -64,7 +64,7 @@ def update_product(
         elif storage[i][PRODUCT_ID_INDEX] == product_id:
             prod = (product_id, norm_name, normalize_price(fields[1]), fields[2])
             prod_num = i
-    if prod != 0:
+    if prod != None:
         storage[prod_num] = prod
         return prod
     print(f"no product with id {product_id}")

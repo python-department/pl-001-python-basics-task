@@ -1,5 +1,5 @@
-from crud import id_check
-from storage import QUANTITY_KEY, Product
+from .crud import id_check
+from .storage import QUANTITY_KEY, Product
 
 
 def add_to_cart(
@@ -19,13 +19,13 @@ def add_to_cart(
         return None
 
     if product_id in cart:
-        cart[product_id][QUANTITY_KEY] += quantity
+        cart[product_id] += quantity
     else:
-        cart[product_id] = storage[product_id]
-        cart[product_id][QUANTITY_KEY] = quantity
+        cart[product_id] = storage[product_id][QUANTITY_KEY]
+        cart[product_id] = quantity
     storage[product_id][QUANTITY_KEY] -= quantity
 
-    return cart[product_id][QUANTITY_KEY]
+    return cart[product_id]
 
 
 def remove_from_cart(
@@ -39,17 +39,17 @@ def remove_from_cart(
     if product_id not in cart:
         print(f"product {product_id} is not in the cart")
         return None
-    if cart[product_id][QUANTITY_KEY] < quantity:
+    if cart[product_id] < quantity:
         print(
-            f"cart holds only {cart[product_id][QUANTITY_KEY]} unit(s) of product {product_id}, cannot remove {quantity}"
+            f"cart holds only {cart[product_id]} unit(s) of product {product_id}, cannot remove {quantity}"
         )
         return None
     if not id_check(product_id, storage):
         return None
 
     storage[product_id][QUANTITY_KEY] += quantity
-    cart[product_id][QUANTITY_KEY] -= quantity
-    if cart[product_id][QUANTITY_KEY] == 0:
+    cart[product_id] -= quantity
+    if cart[product_id] == 0:
         del cart[product_id]
         return 0
-    return cart[product_id][QUANTITY_KEY]
+    return cart[product_id]

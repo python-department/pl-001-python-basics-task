@@ -1,7 +1,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from storage import Product
+from .storage import Product
 
 
 PRICE_PRECISION: Final[int] = 2
@@ -17,7 +17,7 @@ def normalize_product_name(name: str) -> str:
     return (" ".join(name.split())).lower()
 
 
-def size_check(storage: list[Product]):  # находит нужные размеры столбцов
+def size_check(storage: list[Product]) -> list[int]:  # находит нужные размеры столбцов
     column_size = [[2], [4], [5], [8]]
     for prod in storage:
         for ind in range(4):
@@ -25,8 +25,10 @@ def size_check(storage: list[Product]):  # находит нужные разм�
     return [max(column_size[i]) for i in range(4)]
 
 
-def output_line(values: str | Product, size: list[int]):  # выводит строку таблицы
-    if values == "-":
+def output_line(
+    values: Product | tuple[str, ...], size: list[int]
+) -> str:  # выводит строку таблицы
+    if values[0] == "-":
         line = (
             "|"
             + "-" * (2 + size[0])
@@ -44,11 +46,14 @@ def output_line(values: str | Product, size: list[int]):  # выводит ст�
             value = str(values[ind])
             line += f" {value} " + " " * (size[ind] - len(value)) + "|"
     print(line)
+    return line
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
     final_size = size_check(storage)
-    output_line(TABLE_HEADERS, final_size)
-    output_line("-", final_size)
+    result = ""
+    result += output_line(TABLE_HEADERS, final_size)
+    result += output_line(tuple("-"), final_size)
     for prod in storage:
-        output_line(prod, final_size)
+        result += output_line(prod, final_size)
+    return result

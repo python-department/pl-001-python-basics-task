@@ -1,6 +1,12 @@
 import time
 
-from constants import *
+from .constants import (
+    EPOCH_MS_DEFAULT,
+    NODE_ID_DEFAULT,
+    NODE_ID_MAX,
+    SEQUENCE_ID_MAX,
+    TIMESTAMP_MS_MAX,
+)
 
 
 def read_current_millis(epoch_ms: int) -> int:

@@ -1,7 +1,7 @@
 from typing import Final
 
-from crud import read_product, update_product
-from storage import (
+from .crud import read_product, update_product
+from .storage import (
     NAME_INDEX,
     PRICE_INDEX,
     QUANTITY_INDEX,
@@ -29,16 +29,19 @@ def add_to_cart(
             f"not enough stock for product {product_id}: {prod[QUANTITY_INDEX]} available, {quantity} requested"
         )
         return None
-    storage[storage.index(prod)] = update_product(
+    updated = update_product(
         storage,
         product_id,
         (prod[NAME_INDEX], prod[PRICE_INDEX], prod[QUANTITY_INDEX] - quantity),
     )
+    if updated is None:
+        return None
+    storage[storage.index(prod)] = updated
     for i in range(len(cart)):
         if cart[i][LINE_PRODUCT_ID_INDEX] is product_id:
             cart[i] = (product_id, cart[i][LINE_QUANTITY_INDEX] + quantity)
             return cart[i]
-    cart.append(product_id, quantity)
+    cart.append((product_id, quantity))
     return cart[-1]
 
 
@@ -67,15 +70,19 @@ def remove_from_cart(
     prod = read_product(storage, product_id)
     if prod is None:
         return None
-    storage[storage.index(prod)] = update_product(
+    updated = update_product(
         storage,
         product_id,
-        (prod[NAME_INDEX], prod[PRICE_INDEX], prod[QUANTITY_INDEX] + quantity),
+        (prod[NAME_INDEX], prod[PRICE_INDEX], prod[QUANTITY_INDEX] - quantity),
     )
+    if updated is None:
+        return None
+    storage[storage.index(prod)] = updated
     if (prod_cart[LINE_QUANTITY_INDEX] - quantity) == 0:
         cart.remove(prod_cart)
-        return 0
-    cart[cart.index(prod_cart)] = CartLine(
-        product_id, prod_cart[LINE_QUANTITY_INDEX] - quantity
+        return None
+    cart[cart.index(prod_cart)] = (
+        product_id,
+        prod_cart[LINE_QUANTITY_INDEX] - quantity,
     )
     return cart[cart.index(prod_cart)]

@@ -1,11 +1,11 @@
 from decimal import Decimal
 
-from storage import (
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     Product,
 )
-from utils import normalize_price
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
