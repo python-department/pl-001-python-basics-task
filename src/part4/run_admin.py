@@ -1,9 +1,9 @@
-"""Interactive admin console for the part4 in-memory product store.
+"""Interactive admin console for the part3 in-memory product store.
 
 Running this module starts a read-eval-print loop over a single product
 store that lives in memory for the lifetime of the process. Every line
-typed at the prompt is stripped of surrounding whitespace and matched,
-with a ``match`` statement, against the set of known commands:
+typed at the prompt is stripped of surrounding whitespace and matched
+against the set of known commands:
 
 * ``help`` -- print the list of commands and what each one does;
 * ``exit`` -- leave the loop and end the program;
@@ -19,31 +19,48 @@ the id) and those two words is joined with single spaces into the
 product name, so a multi-word name such as ``Gibson SG Junior`` needs no
 quoting.
 
-The four CRUD commands forward to :mod:`src.part4.crud`; whatever
+The four CRUD commands forward to :mod:`src.part3.crud`; whatever
 that call returns is printed unless it is ``None``. A line whose first
 word is not a known verb, or that carries the wrong number of arguments
 for its verb, prints an "is not a command" notice. A line that names a
-command correctly but whose price or quantity argument will not parse
-prints a distinct "arguments are invalid" notice. Either way the store
-is left untouched and the loop keeps running; only ``exit`` stops it.
+command correctly but whose id, price or quantity argument will not
+parse prints a distinct "arguments are invalid" notice. Either way the
+store is left untouched and the loop keeps running; only ``exit`` stops
+it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
-from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product  # noqa: F401
-from .utils import get_storage_str_representation  # noqa: F401
+from .storage import (
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+    Product,
+)
+from .utils import get_storage_str_representation
 
 
-# TODO: задайте приглашение и текст справки (используйте своё решение части 3)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+# TODO: задайте приглашение и текст справки
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
@@ -53,7 +70,8 @@ def show_help() -> None:
     is: a heading, one line per command with a short description, and a
     note on how multi-word names are parsed.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    # TODO: реализуйте функцию
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
@@ -64,7 +82,9 @@ def print_result(result: object) -> None:
             operation already reported its own failure, so nothing is
             printed in that case.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    # TODO: реализуйте функцию
+    if result is not None:
+        print(result)
 
 
 def run_command(
@@ -75,8 +95,6 @@ def run_command(
     Args:
         storage: The product store shared across the session; mutated in
             place by the ``create``, ``update`` and ``delete`` commands.
-        product_names: The normalised names already in ``storage``; kept
-            in sync by the ``create``, ``update`` and ``delete`` commands.
         line: One line of console input, already stripped of surrounding
             whitespace.
 
@@ -86,24 +104,70 @@ def run_command(
         known command prints a notice and still returns ``True``.
 
     Raises:
-        ValueError: If the quantity argument of a CRUD command does not
-            parse as a base-10 integer.
+        ValueError: If an id or quantity argument of a CRUD command does
+            not parse as a base-10 integer.
         decimal.InvalidOperation: If the price argument of ``create`` or
             ``update`` does not parse as a decimal number.
     """
     # TODO: реализуйте функцию
-    return False
+
+    if line == "exit":
+        return False
+    if line == "help":
+        show_help()
+        return True
+    if line == "show":
+        print(get_storage_str_representation(storage))
+        return True
+
+    words = line.split()
+
+    if len(words) >= 4 and words[0] == "create":
+        fields = {
+            NAME_KEY: " ".join(words[1:-2]),
+            PRICE_KEY: Decimal(words[-2]),
+            QUANTITY_KEY: int(words[-1]),
+        }
+        result: object = create_product(storage, product_names, fields)
+        print_result(result)
+        return True
+
+    if len(words) == 2 and words[0] == "read":
+        product_id = words[1]
+        result = read_product(storage, product_id)
+        print_result(result)
+        return True
+
+    if len(words) >= 5 and words[0] == "update":
+        product_id = words[1]
+        fields = {
+            NAME_KEY: " ".join(words[2:-2]),
+            PRICE_KEY: Decimal(words[-2]),
+            QUANTITY_KEY: int(words[-1]),
+        }
+        result = update_product(storage, product_names, product_id, fields)
+        print_result(result)
+        return True
+
+    if len(words) == 2 and words[0] == "delete":
+        product_id = words[1]
+        result = delete_product(storage, product_names, product_id)
+        print_result(result)
+        return True
+
+    print(f"{line!s} is not a command")
+    return True
 
 
 def main() -> None:
     """Run the admin console until the ``exit`` command is entered.
 
-    A single product store, and the set of normalised names it holds, are
-    created empty and kept in memory for the whole session. Each iteration
-    reads one line from stdin, strips its surrounding whitespace and hands
-    it to :func:`run_command`. A line that names a command but whose price
-    or quantity argument does not parse is caught here and reported
-    without stopping the loop; only ``exit`` ends it.
+    A single product store is created empty and kept in memory for the
+    whole session. Each iteration reads one line from stdin, strips its
+    surrounding whitespace and hands it to :func:`run_command`. A line
+    that names a command but whose id, price or quantity argument does
+    not parse is caught here and reported without stopping the loop; only
+    ``exit`` ends it.
     """
     storage: dict[str, Product] = {}
     product_names: set[str] = set()
