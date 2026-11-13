@@ -136,7 +136,7 @@ def get_snowflake_id_generator(
 
     state = {"last_millis": -1, "sequence": 0}
 
-    def generate():
+    def generate() -> int | None:
         current_millis = read_current_millis(epoch_ms)
 
         if current_millis > TIMESTAMP_MS_MAX:

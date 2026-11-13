@@ -125,6 +125,8 @@ def run_command(
     # TODO: реализуйте функцию
     words = line.split()
 
+    result: object = None
+
     match words:
         case ["exit"]:
             return False
