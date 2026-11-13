@@ -14,9 +14,21 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
+import time
 from collections.abc import Callable
 
-from .constants import EPOCH_MS_DEFAULT, NODE_ID_DEFAULT
+from .constants import (
+    # Epoch
+    EPOCH_MS_DEFAULT,
+    # Node ID
+    NODE_ID_BITS,
+    NODE_ID_DEFAULT,
+    NODE_ID_MAX,
+    # Sequence ID
+    SEQUENCE_ID_BITS,
+    SEQUENCE_ID_MAX,
+    TIMESTAMP_MS_MAX,
+)
 
 
 def read_current_millis(epoch_ms: int) -> int:
@@ -30,7 +42,8 @@ def read_current_millis(epoch_ms: int) -> int:
         if ``epoch_ms`` lies in the future.
     """
     # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    a = (time.time_ns() // 1000000) - epoch_ms
+    return a
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
@@ -46,7 +59,8 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
         generated.
     """
     # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    epoch_time = snowflake_id >> (SEQUENCE_ID_BITS + NODE_ID_BITS)
+    return epoch_time + epoch_ms
 
 
 def decode_node_id(snowflake_id: int) -> int:
@@ -61,7 +75,8 @@ def decode_node_id(snowflake_id: int) -> int:
         ``[0, NODE_ID_MAX]``.
     """
     # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    node_num = (snowflake_id >> SEQUENCE_ID_BITS) & NODE_ID_MAX
+    return node_num
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -76,7 +91,8 @@ def decode_sequence_id(snowflake_id: int) -> int:
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
     # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    seq_id = snowflake_id & SEQUENCE_ID_MAX
+    return seq_id
 
 
 def get_snowflake_id_generator(
@@ -109,4 +125,39 @@ def get_snowflake_id_generator(
         ``epoch_ms`` lies in the future.
     """
     # TODO: реализуйте функцию
-    return lambda: 0
+
+    if not 0 <= node_id <= NODE_ID_MAX:
+        print(f"node_id must be in [0, {NODE_ID_MAX}], got {node_id}")
+        return None
+
+    if read_current_millis(epoch_ms) < 0:
+        print(f"epoch_ms must not be in the future, got {epoch_ms}")
+        return None
+
+    state = {"last_millis": -1, "sequence": 0}
+
+    def generate() -> int | None:
+        current_millis = read_current_millis(epoch_ms)
+
+        if current_millis > TIMESTAMP_MS_MAX:
+            print(f"timestamp {current_millis} ms overflows {TIMESTAMP_MS_MAX} ms")
+            return None
+
+        if current_millis == state["last_millis"]:
+            state["sequence"] += 1
+            if state["sequence"] > SEQUENCE_ID_MAX:
+                print(
+                    f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {state['sequence']}"
+                )
+                return None
+        else:
+            state["last_millis"] = current_millis
+            state["sequence"] = 0
+
+        return (
+            (current_millis << (NODE_ID_BITS + SEQUENCE_ID_BITS))
+            | (node_id << SEQUENCE_ID_BITS)
+            | state["sequence"]
+        )
+
+    return generate
