@@ -63,6 +63,7 @@ DELETE_KEY: Final[str] = "delete"
 
 generator = get_snowflake_id_generator()
 
+
 def generate_snowflake_id() -> int | None:
     """Issue the next product identifier from the shared Snowflake generator.
 
@@ -206,10 +207,10 @@ def update_product(
     if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
-    
+
     product = storage[product_id]
     current_name = product[NAME_KEY]
-    
+
     if NAME_KEY in fields:
         fields[NAME_KEY] = normalize_product_name(fields[NAME_KEY])
         if not fields[NAME_KEY]:
@@ -218,18 +219,18 @@ def update_product(
         if fields[NAME_KEY] != current_name and fields[NAME_KEY] in product_names:
             print(f"product name '{fields[NAME_KEY]}' is already taken")
             return None
-    
+
     if PRICE_KEY in fields:
         fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
-    
+
     if NAME_KEY in fields and fields[NAME_KEY] != current_name:
         product_names.discard(current_name)
         product_names.add(fields[NAME_KEY])
-    
+
     for key in (NAME_KEY, PRICE_KEY, QUANTITY_KEY):
         if key in fields:
             product[key] = fields[key]
-    
+
     return product
 
 

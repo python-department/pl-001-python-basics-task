@@ -70,6 +70,7 @@ def add_to_cart(
 
     return new_quan
 
+
 def remove_from_cart(
     storage: dict[int, Product],
     product_names: set[str],
@@ -128,4 +129,3 @@ def remove_from_cart(
         cart[product_id] = remaining
 
     return remaining
-

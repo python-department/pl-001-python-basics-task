@@ -73,6 +73,7 @@ For create and update the price and quantity are the last two words of the
 line; everything before them is the product name, so it may contain spaces
 (for example "Gibson SG Junior") and needs no quoting."""
 
+
 def show_help() -> None:
     """Print the command reference to stdout.
 
@@ -82,6 +83,7 @@ def show_help() -> None:
     """
     # TODO: реализуйте функцию (используйте своё решение части 4)
     print(HELP_TEXT)
+
 
 def print_result(result: object) -> None:
     """Print a CRUD result to stdout unless it is ``None``.
@@ -94,6 +96,7 @@ def print_result(result: object) -> None:
     # TODO: реализуйте функцию (используйте своё решение части 4)
     if result is not None:
         print(result)
+
 
 def run_command(
     storage: dict[int, Product], product_names: set[str], line: str
@@ -142,7 +145,9 @@ def run_command(
                 QUANTITY_KEY: int(args[-1]),
             }
 
-            result = create_product(storage, product_names, fields, generate_id=generate_snowflake_id)
+            result = create_product(
+                storage, product_names, fields, generate_id=generate_snowflake_id
+            )
             print_result(result)
             return True
 

@@ -42,7 +42,12 @@ PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
 TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 # TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ("command name", "success", "fails", "success rate")
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -173,19 +178,21 @@ def get_stats_str_representation(registry: Registry) -> str:
         s = stats["success"]
         f = stats["fails"]
         total = s + f
-        
+
         if total > 0:
             ratio = f"{s / total * 100:.2f}%"
         else:
             ratio = "0.00%"
-            
+
         commands.append(cmd)
         successes.append(str(s))
         fails.append(str(f))
         ratios.append(ratio)
 
     w_cmd = max(len(STATS_TABLE_HEADERS[0]), max((len(x) for x in commands), default=0))
-    w_suc = max(len(STATS_TABLE_HEADERS[1]), max((len(x) for x in successes), default=0))
+    w_suc = max(
+        len(STATS_TABLE_HEADERS[1]), max((len(x) for x in successes), default=0)
+    )
     w_fai = max(len(STATS_TABLE_HEADERS[2]), max((len(x) for x in fails), default=0))
     w_rat = max(len(STATS_TABLE_HEADERS[3]), max((len(x) for x in ratios), default=0))
 

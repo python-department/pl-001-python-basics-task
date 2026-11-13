@@ -14,8 +14,8 @@ a falsy one such as ``0``, counts as a success.
 """
 
 from collections.abc import Callable
-from typing import Final
 from functools import wraps
+from typing import Final
 
 
 # TODO: задайте имена двух счётчиков, см. TASK.md
