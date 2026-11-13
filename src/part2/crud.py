@@ -14,39 +14,46 @@ is already taken.
 
 from decimal import Decimal
 
-from storage import (
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from utils import normalize_price
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
     if not storage:
         return PRODUCT_ID_MIN
-    return max(p[PRODUCT_ID_INDEX] for p in storage) + 1
+
+    max_id = 0
+    for product in storage:
+        current_id = int(product[PRODUCT_ID_INDEX])
+        max_id = max(current_id, max_id)
+    return max_id + 1
 
 
 def create_product(
     storage: list[Product], fields: tuple[str, Decimal, int]
 ) -> int | None:
     name, price, quantity = fields
-    if any(p[NAME_INDEX] == name for p in storage):
-        print(f"product name '{name}' is already taken")
-        return None
-    product_id = generate_product_id(storage)
-    storage.append((product_id, name, normalize_price(price), quantity))
-    return product_id
+    for product in storage:
+        if product[NAME_INDEX] == name:
+            print(f"Product name '{name}' is already taken")
+            return None
+
+    new_id = generate_product_id(storage)
+    normalized_price = normalize_price(price)
+    storage.append((new_id, name, normalized_price, quantity))
+    return new_id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
     for product in storage:
-        if product[0] == product_id:
+        if product[PRODUCT_ID_INDEX] == product_id:
             return product
-
-    print(f"no product with id {product_id}")
+    print(f"No product with id {product_id}")
     return None
 
 
@@ -56,22 +63,20 @@ def update_product(
     fields: tuple[str, Decimal, int],
 ) -> Product | None:
     name, price, quantity = fields
-
-    for index, product in enumerate(storage):
-        if product[0] == product_id:
-            updated = (product_id, name, normalize_price(price), quantity)
-            storage[index] = updated
-            return updated
-
-    print(f"no product with id {product_id}")
+    normalized_price = normalize_price(price)
+    for i in range(len(storage)):
+        if storage[i][PRODUCT_ID_INDEX] == product_id:
+            updated_product = (product_id, name, normalized_price, quantity)
+            storage[i] = updated_product
+            return updated_product
+    print(f"No product with id {product_id}")
     return None
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
-    for index, product in enumerate(storage):
-        if product[0] == product_id:
-            del storage[index]
+    for i in range(len(storage)):
+        if storage[i][PRODUCT_ID_INDEX] == product_id:
+            del storage[i]
             return product_id
-
-    print(f"no product with id {product_id}")
+    print(f"No product with id {product_id}")
     return None

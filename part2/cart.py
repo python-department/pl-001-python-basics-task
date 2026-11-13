@@ -1,6 +1,18 @@
-from typing import Final
+"""Shopping-cart operations layered on top of the product store.
 
-from .crud import read_product
+The cart is a plain list of tuples, one :data:`CartLine` --
+``(product_id, quantity)`` -- per distinct product. Moving units between the
+store and the cart keeps the two sides in balance: :func:`add_to_cart` takes
+units out of stock, :func:`remove_from_cart` puts them back.
+
+Like the CRUD layer, the failure path never raises -- the operation prints
+an explanatory message to stdout and returns ``None``.
+"""
+
+from decimal import Decimal
+from typing import Final, cast
+
+from .crud import read_product, update_product
 from .storage import (
     NAME_INDEX,
     PRICE_INDEX,
@@ -12,12 +24,11 @@ from .storage import (
 
 type CartLine = tuple[int, int]
 
-LINE_PRODUCT_ID_INDEX: Final = 0
-LINE_QUANTITY_INDEX: Final = 1
+LINE_PRODUCT_ID_INDEX: Final[int] = 0
+LINE_QUANTITY_INDEX: Final[int] = 1
 
 
 def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine | None:
-    """Return the cart line for ``product_id``, or ``None`` if absent."""
     for line in cart:
         if line[LINE_PRODUCT_ID_INDEX] == product_id:
             return line
@@ -34,7 +45,15 @@ def add_to_cart(
     if product is None:
         return None
 
-    available = product[QUANTITY_INDEX]
+    stored_id = cast(int, product[PRODUCT_ID_INDEX])
+    if stored_id != product_id:
+        print(f"storage returned a wrong record for product {product_id}")
+        return None
+
+    name = cast(str, product[NAME_INDEX])
+    price = cast(Decimal, product[PRICE_INDEX])
+    available = cast(int, product[QUANTITY_INDEX])
+
     if available < quantity:
         print(
             f"not enough stock for product {product_id}: "
@@ -42,15 +61,11 @@ def add_to_cart(
         )
         return None
 
-    for index, item in enumerate(storage):
-        if item[PRODUCT_ID_INDEX] == product_id:
-            storage[index] = (
-                item[PRODUCT_ID_INDEX],
-                item[NAME_INDEX],
-                item[PRICE_INDEX],
-                available - quantity,
-            )
-            break
+    update_product(
+        storage,
+        product_id,
+        (name, price, available - quantity),
+    )
 
     for index, line in enumerate(cart):
         if line[LINE_PRODUCT_ID_INDEX] == product_id:
@@ -89,15 +104,20 @@ def remove_from_cart(
     if product is None:
         return None
 
-    for index, item in enumerate(storage):
-        if item[PRODUCT_ID_INDEX] == product_id:
-            storage[index] = (
-                item[PRODUCT_ID_INDEX],
-                item[NAME_INDEX],
-                item[PRICE_INDEX],
-                item[QUANTITY_INDEX] + quantity,
-            )
-            break
+    stored_id = cast(int, product[PRODUCT_ID_INDEX])
+    if stored_id != product_id:
+        print(f"storage returned a wrong record for product {product_id}")
+        return None
+
+    name = cast(str, product[NAME_INDEX])
+    price = cast(Decimal, product[PRICE_INDEX])
+    stock_quantity = cast(int, product[QUANTITY_INDEX])
+
+    update_product(
+        storage,
+        product_id,
+        (name, price, stock_quantity + quantity),
+    )
 
     for index, cart_line in enumerate(cart):
         if cart_line[LINE_PRODUCT_ID_INDEX] == product_id:

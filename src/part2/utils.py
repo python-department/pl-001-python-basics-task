@@ -11,7 +11,7 @@ from typing import Final
 
 
 PRICE_PRECISION: Final[int] = 2
-PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
+PRICE_STEP: Final[Decimal] = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
 def normalize_price(price: Decimal) -> Decimal:

@@ -1,6 +1,6 @@
 import time
 
-from part1.constants import (
+from .constants import (
     EPOCH_MS_DEFAULT,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
@@ -12,7 +12,7 @@ from part1.constants import (
 
 
 def read_current_millis(epoch_ms: int) -> int:
-    return time.time_ns() // 1000000 - epoch_ms
+    return time.time_ns() // 1_000_000 - epoch_ms
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
