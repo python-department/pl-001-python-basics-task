@@ -14,13 +14,16 @@ is already taken.
 
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
+    FIELDS_NAME_INDEX,
+    FIELDS_PRICE_INDEX,
+    FIELDS_QUANTITY_INDEX,
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price  # noqa: F401
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -34,8 +37,10 @@ def generate_product_id(storage: list[Product]) -> int:
         :data:`~src.part2.storage.PRODUCT_ID_MIN` when ``storage`` is
         empty.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if not storage:
+        return PRODUCT_ID_MIN
+
+    return max(product[PRODUCT_ID_INDEX] for product in storage) + 1
 
 
 def create_product(
@@ -56,8 +61,18 @@ def create_product(
         ``storage`` is left unchanged and a message naming the clashing
         name is printed.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if any(fields[FIELDS_NAME_INDEX] == product[NAME_INDEX] for product in storage):
+        print(f"product name {fields[FIELDS_NAME_INDEX]} is already taken")
+        return None
+
+    new_id = generate_product_id(storage)
+    new_price = normalize_price(fields[FIELDS_PRICE_INDEX])
+
+    storage.append(
+        (new_id, fields[FIELDS_NAME_INDEX], new_price, fields[FIELDS_QUANTITY_INDEX])
+    )
+
+    return new_id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -72,8 +87,12 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
         ``None`` when no product carries that identifier (a message is
         printed in that case).
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] == product_id:
+            return product
+
+    print(f"no product with id {product_id}")
+    return None
 
 
 def update_product(
@@ -97,10 +116,33 @@ def update_product(
     Returns:
         The updated ``(product_id, name, price, quantity)`` record, or
         ``None`` when no product carries that identifier (``storage`` is
-        left unchanged and a message is printed).
+        left unchanged and a message is printed). Also ``None`` when
+        product name is already taken.
     """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    index_modifiable_product = -1
+
+    for index in range(len(storage)):
+        if storage[index][NAME_INDEX] == fields[FIELDS_NAME_INDEX]:
+            print(f"product name {fields[FIELDS_NAME_INDEX]} is already taken")
+            return None
+
+        if storage[index][PRODUCT_ID_INDEX] == product_id:
+            index_modifiable_product = index
+
+    if index_modifiable_product == -1:
+        print(f"no product with id {product_id}")
+        return None
+
+    new_price = normalize_price(fields[FIELDS_PRICE_INDEX])
+
+    storage[index_modifiable_product] = (
+        product_id,
+        fields[FIELDS_NAME_INDEX],
+        new_price,
+        fields[FIELDS_QUANTITY_INDEX],
+    )
+
+    return storage[index_modifiable_product]
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -116,5 +158,10 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         product carried that identifier (``storage`` is left unchanged and
         a message is printed).
     """
-    # TODO: реализуйте функцию
-    return 0
+    for i, product in enumerate(storage):
+        if product[PRODUCT_ID_INDEX] == product_id:
+            del storage[i]
+            return product_id
+
+    print(f"no product with id {product_id}")
+    return None
