@@ -15,11 +15,12 @@ a falsy one such as ``0``, counts as a success.
 
 from collections.abc import Callable
 from typing import Final
+from functools import wraps
 
 
 # TODO: задайте имена двух счётчиков, см. TASK.md
-SUCCESS_KEY: Final[str] = ""
-FAILS_KEY: Final[str] = ""
+SUCCESS_KEY: Final[str] = "success"
+FAILS_KEY: Final[str] = "fails"
 
 
 type Stats = dict[str, int]
@@ -54,4 +55,23 @@ def collect_stats[**P, R](
         docstring as the original (see :func:`functools.wraps`).
     """
     # TODO: реализуйте декоратор
-    return lambda function: function
+
+    def decorator(func: Callable):
+        if key in registry:
+            print(f"stats key {key!r} is already registered")
+            return func
+
+        registry[key] = {SUCCESS_KEY: 0, FAILS_KEY: 0}
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            if result is None:
+                registry[key][FAILS_KEY] += 1
+            else:
+                registry[key][SUCCESS_KEY] += 1
+            return result
+
+        return wrapper
+
+    return decorator

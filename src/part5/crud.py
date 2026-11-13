@@ -38,21 +38,30 @@ are shared by every store.
 from collections.abc import Callable
 from typing import Any, Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import Registry, collect_stats
+from .snowflake import get_snowflake_id_generator
+from .storage import (
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+    Product,
+)
+from .utils import normalize_price, normalize_product_name
 
 
 STATS_REGISTRY: Final[Registry] = {}
 
 # TODO: задайте ключи операций в реестре, см. TASK.md
-CREATE_KEY: Final[str] = ""
-READ_KEY: Final[str] = ""
-UPDATE_KEY: Final[str] = ""
-DELETE_KEY: Final[str] = ""
+CREATE_KEY: Final[str] = "create"
+READ_KEY: Final[str] = "read"
+UPDATE_KEY: Final[str] = "update"
+DELETE_KEY: Final[str] = "delete"
 
 # TODO: при необходимости заведите здесь общий генератор Snowflake-идентификаторов
 # для generate_snowflake_id (см. TASK.md)
 
+
+generator = get_snowflake_id_generator()
 
 def generate_snowflake_id() -> int | None:
     """Issue the next product identifier from the shared Snowflake generator.
@@ -66,10 +75,14 @@ def generate_snowflake_id() -> int | None:
         cases.
     """
     # TODO: реализуйте функцию
-    return 0
+
+    if generator is None:
+        return None
+    return generator()
 
 
 # TODO: оберните операцию декоратором collect_stats
+@collect_stats(CREATE_KEY, STATS_REGISTRY)
 def create_product(
     storage: dict[int, Product],
     product_names: set[str],
@@ -105,10 +118,33 @@ def create_product(
         printed (for the last case, by ``generate_id`` itself).
     """
     # TODO: реализуйте функцию
-    return 0
+
+    norm_name = normalize_product_name(fields[NAME_KEY])
+
+    if not norm_name:
+        print("product name must not be blank")
+        return None
+    if norm_name in product_names:
+        print(f"product name '{norm_name}' is already taken")
+        return None
+
+    new_id = generate_id()
+    if new_id is None:
+        return None
+
+    storage[new_id] = {
+        NAME_KEY: norm_name,
+        PRICE_KEY: normalize_price(fields[PRICE_KEY]),
+        QUANTITY_KEY: fields[QUANTITY_KEY],
+    }
+
+    product_names.add(norm_name)
+
+    return new_id
 
 
 # TODO: оберните операцию декоратором collect_stats
+@collect_stats(READ_KEY, STATS_REGISTRY)
 def read_product(storage: dict[int, Product], product_id: int) -> Product | None:
     """Return the product stored under ``product_id``.
 
@@ -121,10 +157,14 @@ def read_product(storage: dict[int, Product], product_id: int) -> Product | None
         that identifier (a message is printed in that case).
     """
     # TODO: реализуйте функцию (используйте своё решение части 4)
-    return {}
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    return storage[product_id]
 
 
 # TODO: оберните операцию декоратором collect_stats
+@collect_stats(UPDATE_KEY, STATS_REGISTRY)
 def update_product(
     storage: dict[int, Product],
     product_names: set[str],
@@ -163,10 +203,38 @@ def update_product(
         own current name is allowed.
     """
     # TODO: реализуйте функцию (используйте своё решение части 4)
-    return {}
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    
+    product = storage[product_id]
+    current_name = product[NAME_KEY]
+    
+    if NAME_KEY in fields:
+        fields[NAME_KEY] = normalize_product_name(fields[NAME_KEY])
+        if not fields[NAME_KEY]:
+            print("product name must not be blank")
+            return None
+        if fields[NAME_KEY] != current_name and fields[NAME_KEY] in product_names:
+            print(f"product name '{fields[NAME_KEY]}' is already taken")
+            return None
+    
+    if PRICE_KEY in fields:
+        fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+    
+    if NAME_KEY in fields and fields[NAME_KEY] != current_name:
+        product_names.discard(current_name)
+        product_names.add(fields[NAME_KEY])
+    
+    for key in (NAME_KEY, PRICE_KEY, QUANTITY_KEY):
+        if key in fields:
+            product[key] = fields[key]
+    
+    return product
 
 
 # TODO: оберните операцию декоратором collect_stats
+@collect_stats(DELETE_KEY, STATS_REGISTRY)
 def delete_product(
     storage: dict[int, Product],
     product_names: set[str],
@@ -188,4 +256,11 @@ def delete_product(
         are left unchanged and a message is printed).
     """
     # TODO: реализуйте функцию (используйте своё решение части 4)
-    return 0
+    if not product_id in storage:
+        print(f"no product with id {product_id}")
+        return None
+
+    product_names.discard(storage[product_id][NAME_KEY])
+    del storage[product_id]
+
+    return product_id
