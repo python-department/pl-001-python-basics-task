@@ -18,10 +18,11 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
-from typing import Final
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, Final
 
-from .storage import (  # noqa: F401
+from .storage import (
+    ID_KEY,
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
@@ -31,16 +32,13 @@ from .storage import (  # noqa: F401
 
 # Number of fractional digits every stored price is rounded to.
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 3)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 3)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -53,8 +51,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -71,11 +68,61 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    name_words = name.split()
+    normalized_name = " ".join(name_words).lower()
+
+    return normalized_name
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def get_max_column_length(storage: dict[str, Product], key: str) -> int:
+    """Measure the widest table cell a record can hold for one field.
+
+    Args:
+        storage: The product store to measure.
+        key: The name of the record field to measure.
+
+    Returns:
+        The character length of the longest of the column header ``key``
+        and ``str`` of every value stored under ``key`` in ``storage``, so
+        the result is never shorter than the header itself.
+    """
+    values = [len(key)]
+    for record in storage.values():
+        values.append(len(str(record[key])))
+
+    return max(values)
+
+
+def get_line_separator(column_lengths: dict[str, int]) -> str:
+    """Build the dashed separator row of the store table.
+
+    Args:
+        column_lengths: The table column names and their widths.
+
+    Returns:
+        A string of the form ``|----|------|`` where each dash run is
+        exactly two characters (the surrounding padding spaces) wider
+        than the column it belongs to.
+    """
+    dashes = [f"{'-' * (length + 2)}" for length in column_lengths.values()]
+
+    return f"|{'|'.join(dashes)}|"
+
+
+def format_row(cells: dict[str, Any], column_lengths: dict[str, int]) -> str:
+    """Render one store-table row with each cell padded to its column width.
+
+    Args:
+        cells: The row cells keyed by column name, in the exact column
+            order the row must be printed in.
+        column_lengths: The table column names and their widths.
+
+    Returns:
+        The row as a string: every cell is left-justified and padded to
+        its column width, wrapped in a single space and separated by
+        ``|``, with ``|`` at both ends of the row.
+    """
+    return f"|{'|'.join(f' {cell!s:<{column_lengths[header]}} ' for header, cell in cells.items())}|"
 
 
 def get_storage_str_representation(storage: dict[str, Product]) -> str:
@@ -96,5 +143,28 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    column_lengths = {
+        ID_KEY: max([len(ID_KEY)] + [len(product_id) for product_id in storage]),
+        NAME_KEY: get_max_column_length(storage, NAME_KEY),
+        PRICE_KEY: get_max_column_length(storage, PRICE_KEY),
+        QUANTITY_KEY: get_max_column_length(storage, QUANTITY_KEY),
+    }
+    lines = [
+        format_row({header: header for header in TABLE_HEADERS}, column_lengths),
+        get_line_separator(column_lengths),
+    ]
+
+    for product_id, record in storage.items():
+        lines.append(
+            format_row(
+                {
+                    ID_KEY: product_id,
+                    NAME_KEY: record[NAME_KEY],
+                    PRICE_KEY: record[PRICE_KEY],
+                    QUANTITY_KEY: record[QUANTITY_KEY],
+                },
+                column_lengths,
+            )
+        )
+
+    return "\n".join(lines)
