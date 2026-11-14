@@ -1,6 +1,4 @@
-from .storage import (  # noqa: F401
-    NAME_KEY,
-    PRICE_KEY,
+from .storage import (
     QUANTITY_KEY,
     Product,
 )

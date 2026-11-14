@@ -11,7 +11,6 @@ from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import get_storage_str_representation
 
 
-# TODO: задайте приглашение и текст справки (используйте своё решение части 3)
 PROMPT: Final[str] = "admin> "
 HELP_TEXT: Final[str] = """
   Available commands:
