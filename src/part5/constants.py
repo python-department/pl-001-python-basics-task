@@ -15,23 +15,27 @@ changing a width keeps everything else consistent.
 from typing import Final
 
 
-# TODO: замените заглушки (0) на корректные значения (используйте своё решение
-# части 1).
-
 # Twitter's original Snowflake epoch: 2010-11-04 01:42:54.657 UTC.
-EPOCH_MS_DEFAULT: Final[int] = 0
+EPOCH_MS_DEFAULT: Final = 1288834974657
 
 # Node identifier used when the caller does not supply one.
-NODE_ID_DEFAULT: Final[int] = 0
+NODE_ID_DEFAULT: Final = 1
+
 
 # Width of each field, in bits.
-TIMESTAMP_BITS: Final[int] = 0
-NODE_ID_BITS: Final[int] = 0
-SEQUENCE_ID_BITS: Final[int] = 0
+def my_max_value(n: int) -> int:
+    return int(2**n - 1)
 
-# Largest value each field can hold.
-TIMESTAMP_MS_MAX: Final[int] = 0
-NODE_ID_MAX: Final[int] = 0
-SEQUENCE_ID_MAX: Final[int] = 0
 
-# Здесь можно добавить собственные вспомогательные константы
+TIMESTAMP_BITS: Final = (
+    41  # число миллисекунд прощедщих с момента пользовательской эпохи
+)
+NODE_ID_BITS: Final = 10  # номер узла
+SEQUENCE_ID_BITS: Final = 12  # порядковый номер
+
+TIMESTAMP_SHIFT: Final = NODE_ID_BITS + SEQUENCE_ID_BITS
+
+# так как номер и время(все три строчки) беззнаковые
+TIMESTAMP_MS_MAX: Final = my_max_value(TIMESTAMP_BITS)
+NODE_ID_MAX: Final = my_max_value(NODE_ID_BITS)
+SEQUENCE_ID_MAX: Final = my_max_value(SEQUENCE_ID_BITS)
