@@ -21,23 +21,19 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .decorators import Registry
-from .storage import Product
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final[Decimal] = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+STATS_TABLE_HEADERS = ("command name", "success", "fails", "success rate")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -50,8 +46,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,11 +63,35 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return " ".join(name.lower().split())
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def heider_one_write(width: int) -> str:
+    return "|" + "-" * (width + 2)
+
+
+def post_heider_write(w1: int, w2: int, w3: int, w4: int) -> str:
+    return (
+        heider_one_write(w1)
+        + heider_one_write(w2)
+        + heider_one_write(w3)
+        + heider_one_write(w4)
+        + "|"
+    )
+
+
+def max_storege_len(storage: dict[int, Product], id: int) -> int:
+    widths = [len(TABLE_HEADERS[id])]
+    for uuid, product in storage.items():
+        if id == 0:
+            widths.append(len(str(uuid)))
+        elif id == 1:
+            widths.append(len(str(product[NAME_KEY])))
+        elif id == 2:
+            widths.append(len(str(product[PRICE_KEY])))
+        elif id == 3:
+            widths.append(len(str(product[QUANTITY_KEY])))
+    return max(widths)
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
@@ -93,8 +112,38 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    widths_colomn = [max_storege_len(storage, i) for i in range(len(TABLE_HEADERS))]
+
+    header = (
+        "|"
+        + "|".join(
+            f" {TABLE_HEADERS[i].ljust(widths_colomn[i])} "
+            for i in range(len(TABLE_HEADERS))
+        )
+        + "|"
+    )
+
+    razdel = post_heider_write(*widths_colomn)
+
+    lines = [header, razdel]
+    for uuid, product in storage.items():
+        one_product = [
+            str(uuid),
+            str(product[NAME_KEY]),
+            str(product[PRICE_KEY]),
+            str(product[QUANTITY_KEY]),
+        ]
+        output_product_one = (
+            "|"
+            + "|".join(
+                f" {one_product[i].ljust(widths_colomn[i])} "
+                for i in range(len(TABLE_HEADERS))
+            )
+            + "|"
+        )
+        lines.append(output_product_one)
+
+    return "\n".join(lines)
 
 
 def get_stats_str_representation(registry: Registry) -> str:
@@ -116,5 +165,30 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    rows = []
+    for cmd, stats in registry.items():
+        s, f = stats["success"], stats["fails"]
+        total = s + f
+        rate = (s / total * 100) if total > 0 else 0.0
+        rows.append([cmd, str(s), str(f), f"{rate:.2f}%"])
+
+    widths = [
+        max([len(STATS_TABLE_HEADERS[i])] + [len(row[i]) for row in rows])
+        for i in range(4)
+    ]
+
+    header = (
+        "|"
+        + "|".join(f" {STATS_TABLE_HEADERS[i].ljust(widths[i])} " for i in range(4))
+        + "|"
+    )
+    razdel = post_heider_write(*widths)
+
+    lines = [header, razdel]
+
+    for row in rows:
+        lines.append(
+            "|" + "|".join(f" {row[i].ljust(widths[i])} " for i in range(4)) + "|"
+        )
+
+    return "\n".join(lines)

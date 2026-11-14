@@ -14,9 +14,10 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
+import time
 from collections.abc import Callable
 
-from .constants import EPOCH_MS_DEFAULT, NODE_ID_DEFAULT
+from .constants import *
 
 
 def read_current_millis(epoch_ms: int) -> int:
@@ -29,8 +30,8 @@ def read_current_millis(epoch_ms: int) -> int:
         The count of whole milliseconds between ``epoch_ms`` and now. Negative
         if ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    now_ms = time.time_ns() // 1_000_000  # текущий моент
+    return now_ms - epoch_ms
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
@@ -45,8 +46,7 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
         The absolute Unix time in milliseconds at which the identifier was
         generated.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return (snowflake_id >> TIMESTAMP_SHIFT) + epoch_ms
 
 
 def decode_node_id(snowflake_id: int) -> int:
@@ -60,8 +60,7 @@ def decode_node_id(snowflake_id: int) -> int:
         The node identifier packed into ``snowflake_id``, in the range
         ``[0, NODE_ID_MAX]``.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return (snowflake_id >> SEQUENCE_ID_BITS) & NODE_ID_MAX
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -75,8 +74,7 @@ def decode_sequence_id(snowflake_id: int) -> int:
         The per-millisecond sequence counter packed into ``snowflake_id``, in
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 1)
-    return 0
+    return snowflake_id & SEQUENCE_ID_MAX
 
 
 def get_snowflake_id_generator(
@@ -108,5 +106,45 @@ def get_snowflake_id_generator(
         to stdout, if ``node_id`` is outside ``[0, NODE_ID_MAX]`` or
         ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию
-    return lambda: 0
+
+    if node_id < 0 or node_id > NODE_ID_MAX:
+        print(f"node_id must be in [0, {NODE_ID_MAX}], got {node_id}")
+        return None
+    if read_current_millis(epoch_ms) < 0:
+        print(f"epoch_ms must not be in the future, got {epoch_ms}")
+        return None
+
+    last_timestamp = -1
+    sequence_id = 0
+
+    def generate_snowflake_id() -> int | None:
+        nonlocal last_timestamp, sequence_id
+        local_const_time = read_current_millis(epoch_ms)
+
+        # if node_id < 0 or node_id > NODE_ID_MAX:
+        #     print(f"node_id must be in [0, {NODE_ID_MAX}]")
+        #     return None
+        # if sequence_id < 0 or sequence_id > SEQUENCE_ID_MAX:
+        #     print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}]")
+        #     return None
+        if local_const_time > TIMESTAMP_MS_MAX:
+            print(f"timestamp {local_const_time} ms overflows {TIMESTAMP_MS_MAX} ms")
+            return None
+        if local_const_time == last_timestamp:
+            sequence_id += 1
+            if sequence_id > SEQUENCE_ID_MAX:
+                print(
+                    f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}"
+                )
+                return None
+        else:
+            sequence_id = 0
+            last_timestamp = local_const_time
+        snowflake_id = (
+            (local_const_time << TIMESTAMP_SHIFT)
+            | (node_id << SEQUENCE_ID_BITS)
+            | sequence_id
+        )
+        return snowflake_id
+
+    return generate_snowflake_id
