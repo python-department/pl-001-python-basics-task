@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import pytest
 
@@ -351,7 +351,7 @@ class TestChangedCrud:
 # cart.py and storage table — only the changed integer-ID representation
 # ---------------------------------------------------------------------------
 
-
+ 
 class TestIntegerIdsOutsideCrud:
     def test_cart_accepts_integer_ids_without_changing_name_index_or_stats(self) -> None:
         storage = {ID_1: product(quantity=7)}
@@ -370,9 +370,17 @@ class TestIntegerIdsOutsideCrud:
         table = get_storage_str_representation({ID_1: product("hammer", 3)})
 
         assert str(ID_1) in table
+
+        assert f"{ID_1:e}" not in table
+        assert f"{ID_1:g}" not in table
+
         assert "hammer" in table
         assert "10.00" in table
-        assert table.rstrip().endswith("| 3 |")
+
+        last_row = table.splitlines()[-1]
+        assert last_row.startswith("|") and last_row.endswith("|")
+        quantity_cell = last_row.split("|")[-2].strip()
+        assert quantity_cell == "3"
 
 
 # ---------------------------------------------------------------------------
@@ -445,11 +453,26 @@ class TestAdminChanges:
         assert storage == {} and names == set()
         assert capsys.readouterr().out == f"{ID_1}\n"
 
-    def test_non_integer_id_is_reported_as_invalid_command_arguments(self, capsys) -> None:
-        assert admin.run_command({}, set(), "read not-an-int") is True
-        assert capsys.readouterr().out == (
-            "'read not-an-int' names a command but its arguments are invalid\n"
-        )
+    def test_non_integer_id_raises_value_error(self) -> None:
+        """Bad ids surface as ValueError; the REPL layer is what reports them."""
+        with pytest.raises(ValueError):
+            admin.run_command({}, set(), "read not-an-int")
+
+    def test_non_decimal_price_raises_invalid_operation(self) -> None:
+        """Bad prices surface as decimal.InvalidOperation, not ValueError."""
+        with pytest.raises(InvalidOperation):
+            admin.run_command({}, set(), "create x abc 5")
+            
+    def test_main_reports_bad_arguments_and_keeps_running(
+        self, monkeypatch, capsys
+    ) -> None:
+        inputs = iter(["read not-an-int", "exit"])
+        monkeypatch.setattr("builtins.input", lambda _prompt="": next(inputs))
+
+        admin.main()
+
+        out = capsys.readouterr().out
+        assert "'read not-an-int' names a command but its arguments are invalid" in out
 
     def test_stats_command_prints_registry_without_mutating_store(self, capsys) -> None:
         storage = {ID_1: product()}
