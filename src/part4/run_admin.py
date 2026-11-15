@@ -28,22 +28,33 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
-from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product  # noqa: F401
-from .utils import get_storage_str_representation  # noqa: F401
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import get_storage_str_representation
 
 
 # TODO: задайте приглашение и текст справки (используйте своё решение части 3)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
@@ -53,7 +64,7 @@ def show_help() -> None:
     is: a heading, one line per command with a short description, and a
     note on how multi-word names are parsed.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
@@ -64,7 +75,8 @@ def print_result(result: object) -> None:
             operation already reported its own failure, so nothing is
             printed in that case.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    if result is not None:
+        print(result)
 
 
 def run_command(
@@ -92,7 +104,50 @@ def run_command(
             ``update`` does not parse as a decimal number.
     """
     # TODO: реализуйте функцию
-    return False
+    parts = line.split()
+    if not parts:
+        print(f"'{line}' is not a command")
+        return True
+    command = parts[0]
+    match command:
+        case "help" if len(parts) == 1:
+            show_help()
+            return True
+        case "exit" if len(parts) == 1:
+            return False
+        case "show" if len(parts) == 1:
+            print(get_storage_str_representation(storage))
+            return True
+        case "create" if len(parts) >= 4:
+            name = " ".join(parts[1:-2])
+            price = Decimal(parts[-2])
+            quantity = int(parts[-1])
+            fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
+            new_id = create_product(storage, product_names, fields)
+            print_result(new_id)
+            return True
+        case "read" if len(parts) == 2:
+            product_id = parts[1]
+            res_read = read_product(storage, product_id)
+            print_result(res_read)
+            return True
+        case "delete" if len(parts) == 2:
+            product_id = parts[1]
+            res_delete = delete_product(storage, product_names, product_id)
+            print_result(res_delete)
+            return True
+        case "update" if len(parts) >= 5:
+            product_id = parts[1]
+            name = " ".join(parts[2:-2])
+            price = Decimal(parts[-2])
+            quantity = int(parts[-1])
+            fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
+            updated = update_product(storage, product_names, product_id, fields)
+            print_result(updated)
+            return True
+        case _:
+            print(f"'{line}' is not a command")
+            return True
 
 
 def main() -> None:
