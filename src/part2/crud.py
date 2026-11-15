@@ -14,66 +14,45 @@ is already taken.
 
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price  # noqa: F401
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
-    """Choose the identifier for the next product added to ``storage``.
+    if not len(storage):
+        return PRODUCT_ID_MIN
+    mid = 0
+    for i in range(len(storage)):
+        mid = max(mid, storage[i][PRODUCT_ID_INDEX])
 
-    Args:
-        storage: The product store to inspect.
-
-    Returns:
-        One past the greatest identifier currently held in ``storage``, or
-        :data:`~src.part2.storage.PRODUCT_ID_MIN` when ``storage`` is
-        empty.
-    """
-    # TODO: реализуйте функцию
-    return 0
+    return mid + 1
 
 
 def create_product(
     storage: list[Product], fields: tuple[str, Decimal, int]
 ) -> int | None:
-    """Append a new product to ``storage`` and return its new identifier.
-
-    Args:
-        storage: The product store to append to; modified in place on
-            success.
-        fields: A ``(name, price, quantity)`` tuple describing the product.
-            ``price`` is a :class:`~decimal.Decimal` amount and is rounded
-            to the stored money precision before it is saved.
-
-    Returns:
-        The identifier generated for the new product, or ``None`` when a
-        product with the same name already exists. In the ``None`` case
-        ``storage`` is left unchanged and a message naming the clashing
-        name is printed.
-    """
-    # TODO: реализуйте функцию
-    return 0
+    for i in range(len(storage)):
+        if fields[0] == storage[i][NAME_INDEX]:
+            print(f"product name {fields[0]} is already taken")
+            return None
+    id = generate_product_id(storage)
+    cena = normalize_price(fields[1])
+    product = (id, fields[0], cena, fields[2])
+    storage.append(product)
+    return id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
-    """Return the product stored under ``product_id``.
-
-    Args:
-        storage: The product store to search.
-        product_id: The identifier to look up.
-
-    Returns:
-        The matching ``(product_id, name, price, quantity)`` record, or
-        ``None`` when no product carries that identifier (a message is
-        printed in that case).
-    """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    for i in range(len(storage)):
+        if product_id == storage[i][PRODUCT_ID_INDEX]:
+            return storage[i]
+    print(f"no product with id {product_id}")
+    return None
 
 
 def update_product(
@@ -81,40 +60,23 @@ def update_product(
     product_id: int,
     fields: tuple[str, Decimal, int],
 ) -> Product | None:
-    """Overwrite the fields of the product stored under ``product_id``.
-
-    The identifier itself is preserved; only ``name``, ``price`` and
-    ``quantity`` are replaced.
-
-    Args:
-        storage: The product store to modify; the matching record is
-            replaced in place on success.
-        product_id: The identifier of the product to change.
-        fields: A ``(name, price, quantity)`` tuple with the new values.
-            ``price`` is a :class:`~decimal.Decimal` amount and is rounded
-            to the stored money precision before it is saved.
-
-    Returns:
-        The updated ``(product_id, name, price, quantity)`` record, or
-        ``None`` when no product carries that identifier (``storage`` is
-        left unchanged and a message is printed).
-    """
-    # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    for i in range(len(storage)):
+        if product_id == storage[i][PRODUCT_ID_INDEX]:
+            storage[i] = (
+                product_id,
+                fields[0],
+                normalize_price(fields[1]),
+                fields[2],
+            )
+            return storage[i]
+    print(f"no product with id {product_id}")
+    return None
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
-    """Remove the product stored under ``product_id`` from ``storage``.
-
-    Args:
-        storage: The product store to remove from; modified in place on
-            success.
-        product_id: The identifier of the product to remove.
-
-    Returns:
-        ``product_id`` when a product was removed, or ``None`` when no
-        product carried that identifier (``storage`` is left unchanged and
-        a message is printed).
-    """
-    # TODO: реализуйте функцию
-    return 0
+    for i in range(len(storage)):
+        if product_id == storage[i][PRODUCT_ID_INDEX]:
+            storage.remove(storage[i])
+            return product_id
+    print(f"no product with id {product_id}")
+    return None
