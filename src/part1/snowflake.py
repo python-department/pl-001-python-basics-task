@@ -34,7 +34,6 @@ def generate_snowflake_id(
     node_id: int = NODE_ID_DEFAULT,
     epoch_ms: int = EPOCH_MS_DEFAULT,
 ) -> int | None:
-
     if not (0 <= node_id <= NODE_ID_MAX):
         print(f"node_id must be in [0, {NODE_ID_MAX}], got {node_id}")
         return None
