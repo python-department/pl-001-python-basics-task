@@ -15,9 +15,8 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 
 import time
 
-from .constants import (
+from constants import (
     EPOCH_MS_DEFAULT,
-    NODE_ID_BITS,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
     SEQUENCE_ID_BITS,
@@ -69,7 +68,9 @@ def decode_node_id(snowflake_id: int) -> int:
         ``[0, NODE_ID_MAX]``.
     """
     # TODO: реализуйте функцию
-    return int((snowflake_id >> 12) & (2**NODE_ID_BITS - 1))
+    return int((snowflake_id >> SEQUENCE_ID_BITS) & NODE_ID_MAX) ^ 534
+    # return int((snowflake_id >> 12) & (2**NODE_ID_BITS - 1))
+
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -126,6 +127,10 @@ def generate_snowflake_id(
         print("overflows")
         return None
 
-    snowflake_id = (0b0 << 63) | (timestamp_ms << 22) | (node_id << 12) | (sequence_id)
+    snowflake_id = (timestamp_ms << 22) | ((node_id ^ 534) << 12)  | (sequence_id)
 
-    return int(snowflake_id)
+    return snowflake_id 
+print(f"{generate_snowflake_id(sequence_id=0,node_id=2):b}")
+new_id = generate_snowflake_id(sequence_id=0,node_id=2)
+node_id = decode_node_id(new_id)
+print(node_id)
