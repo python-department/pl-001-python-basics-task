@@ -18,7 +18,8 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+import re
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .storage import Product
@@ -28,68 +29,47 @@ from .storage import Product
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
+_WHITESPACE_RUN: Final = re.compile(r"\s+")
+_CELL_PADDING: Final = 2
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    return _WHITESPACE_RUN.sub(" ", name.strip()).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def _measure_widths(rows: list[tuple[str, ...]]) -> list[int]:
+    return [
+        max(len(header), *(len(row[i]) for row in rows))
+        for i, header in enumerate(TABLE_HEADERS)
+    ]
+
+
+def _render_row(cells: tuple[str, ...], widths: list[int]) -> str:
+    padded = (cell.ljust(width) for cell, width in zip(cells, widths))
+    return "| " + " | ".join(padded) + " |"
+
+
+def _render_separator(widths: list[int]) -> str:
+    runs = ("-" * (width + _CELL_PADDING) for width in widths)
+    return "|" + "|".join(runs) + "|"
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    rows = [tuple(str(value) for value in product) for product in storage]
+    widths = _measure_widths(rows)
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
-
-    Args:
-        storage: The product store to render.
-
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage`` in list order. When ``storage``
-        is empty only the header and separator rows are returned, sized to
-        the header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    lines = [_render_row(TABLE_HEADERS, widths), _render_separator(widths)]
+    lines.extend(_render_row(row, widths) for row in rows)
+    return "\n".join(lines)

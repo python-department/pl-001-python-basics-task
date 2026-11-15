@@ -29,67 +29,118 @@ store is left untouched and the loop keeps running; only ``exit`` stops
 it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from collections.abc import Callable
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
 from .storage import Product
-from .utils import get_storage_str_representation  # noqa: F401
+from .utils import get_storage_str_representation
 
 
-# TODO: задайте приглашение и текст справки
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
+
+_NAME_AND_TWO_NUMBERS: Final = 3
+_ID_AND_NAME_AND_TWO_NUMBERS: Final = 4
+_VARIADIC: Final = frozenset({"create", "update"})
 
 
 def show_help() -> None:
-    """Print the command reference to stdout.
-
-    The text is the module-level :data:`HELP_TEXT` constant, printed as
-    is: a heading, one line per command with a short description, and a
-    note on how multi-word names are parsed.
-    """
-    # TODO: реализуйте функцию
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
-    """Print a CRUD result to stdout unless it is ``None``.
+    if result is not None:
+        print(result)
 
-    Args:
-        result: The value returned by a CRUD operation. ``None`` means the
-            operation already reported its own failure, so nothing is
-            printed in that case.
-    """
-    # TODO: реализуйте функцию
+
+def _parse_fields(args: list[str]) -> tuple[str, Decimal, int]:
+    name = " ".join(args[:-2])
+    price = Decimal(args[-2])
+    quantity = int(args[-1])
+    return name, price, quantity
+
+
+def _run_read(storage: list[Product], args: list[str]) -> None:
+    print_result(read_product(storage, int(args[0])))
+
+
+def _run_delete(storage: list[Product], args: list[str]) -> None:
+    print_result(delete_product(storage, int(args[0])))
+
+
+def _run_create(storage: list[Product], args: list[str]) -> None:
+    print_result(create_product(storage, _parse_fields(args)))
+
+
+def _run_update(storage: list[Product], args: list[str]) -> None:
+    product_id = int(args[0])
+    fields = _parse_fields(args[1:])
+    print_result(update_product(storage, product_id, fields))
+
+
+def _run_show(storage: list[Product], args: list[str]) -> None:
+    print(get_storage_str_representation(storage))
+
+
+def _run_help(storage: list[Product], args: list[str]) -> None:
+    show_help()
+
+
+def _run_exit(storage: list[Product], args: list[str]) -> bool | None:
+    return False
+
+
+type _Handler = Callable[[list[Product], list[str]], bool | None]
+
+
+_COMMANDS: Final[dict[str, tuple[_Handler, int | None]]] = {
+    "help": (_run_help, 0),
+    "exit": (_run_exit, 0),
+    "show": (_run_show, 0),
+    "read": (_run_read, 1),
+    "delete": (_run_delete, 1),
+    "create": (_run_create, _NAME_AND_TWO_NUMBERS),
+    "update": (_run_update, _ID_AND_NAME_AND_TWO_NUMBERS),
+}
+
+
+def _accepts(verb: str, args: list[str]) -> bool:
+    _, arity = _COMMANDS[verb]
+    if arity is None:
+        return True
+    if verb in _VARIADIC:
+        return len(args) >= arity
+    return len(args) == arity
 
 
 def run_command(storage: list[Product], line: str) -> bool:
-    """Parse one console line and carry out the command it names.
+    words = line.split()
+    verb = words[0] if words else ""
 
-    Args:
-        storage: The product store shared across the session; mutated in
-            place by the ``create``, ``update`` and ``delete`` commands.
-        line: One line of console input, already stripped of surrounding
-            whitespace.
+    if verb not in _COMMANDS or not _accepts(verb, words[1:]):
+        print(f"'{line}' is not a command")
+        return True
 
-    Returns:
-        ``True`` to keep the read-eval-print loop running, or ``False``
-        once the ``exit`` command has been seen. A line that is not a
-        known command prints a notice and still returns ``True``.
-
-    Raises:
-        ValueError: If an id or quantity argument of a CRUD command does
-            not parse as a base-10 integer.
-        decimal.InvalidOperation: If the price argument of ``create`` or
-            ``update`` does not parse as a decimal number.
-    """
-    # TODO: реализуйте функцию
-    return False
+    handler, _ = _COMMANDS[verb]
+    return handler(storage, words[1:]) is not False
 
 
 def main() -> None:
