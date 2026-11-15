@@ -90,7 +90,6 @@ def create_product(
     return product_id
 
 
-
 @collect_stats(READ_KEY, STATS_REGISTRY)
 def read_product(storage: dict[int, Product], product_id: int) -> Product | None:
     if product_id not in storage:

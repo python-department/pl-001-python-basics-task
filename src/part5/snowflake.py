@@ -14,9 +14,8 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-from collections.abc import Callable
-
 import time
+from collections.abc import Callable
 
 from .constants import (
     EPOCH_MS_DEFAULT,
@@ -38,7 +37,7 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
 
 
 def decode_node_id(snowflake_id: int) -> int:
-   return (snowflake_id >> NODE_ID_SHIFT) & NODE_ID_MAX
+    return (snowflake_id >> NODE_ID_SHIFT) & NODE_ID_MAX
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -69,18 +68,21 @@ def get_snowflake_id_generator(
 
         if current_ms == last_ms:
             sequence_id += 1
-            if sequence_id > SEQUENCE_ID_MAX:
-                print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], "
-                      f"got {sequence_id}"
-                )
-                return None
-            else:
-                last_ms = current_ms
-                sequence_id = 0
+        else:
+            last_ms = current_ms
+            sequence_id = 0
 
-            return (
-                (current_ms << TIMESTAMP_SHIFT)
-                | (node_id << NODE_ID_SHIFT)
-                | sequence_id
+        if sequence_id > SEQUENCE_ID_MAX:
+            print(
+                f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], "
+                f"got {sequence_id}"
             )
+            return None
+
+        return (
+            (current_ms << TIMESTAMP_SHIFT)
+            | (node_id << NODE_ID_SHIFT)
+            | sequence_id
+        )
+
     return generate

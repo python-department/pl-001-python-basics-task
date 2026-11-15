@@ -21,6 +21,7 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
+from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
@@ -48,17 +49,20 @@ def normalize_price(price: Decimal) -> Decimal:
 def normalize_product_name(name: str) -> str:
     return " ".join(name.split()).lower()
 
-def _render_table(headers: tuple[str, ...], rows: list[tuple[str, ...]]) -> str:
+
+def _render_table(
+    headers: Sequence[str], rows: Sequence[Sequence[str]]
+) -> str:
+    """Render a plain text table with dashes, like in part 3."""
     widths = [len(header) for header in headers]
     for row in rows:
         for i, cell in enumerate(row):
             if len(cell) > widths[i]:
                 widths[i] = len(cell)
 
-    def render_row(cells: tuple[str, ...]) -> str:
+    def render_row(cells: Sequence[str]) -> str:
         parts = [cell.ljust(width) for cell, width in zip(cells, widths)]
         return "| " + " | ".join(parts) + " |"
-
 
     lines = [render_row(headers)]
     lines.append("|" + "|".join("-" * (width + 2) for width in widths) + "|")
