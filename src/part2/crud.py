@@ -35,8 +35,12 @@ def generate_product_id(storage: list[Product]) -> int:
         empty.
     """
     # TODO: реализуйте функцию
-    return 0
-
+    if not storage:
+        return PRODUCT_ID_MIN
+    max_id = 0
+    for product in storage:
+        max_id = max(max_id, product[PRODUCT_ID_INDEX])
+    return max_id + 1
 
 def create_product(
     storage: list[Product], fields: tuple[str, Decimal, int]
@@ -57,7 +61,15 @@ def create_product(
         name is printed.
     """
     # TODO: реализуйте функцию
-    return 0
+    name, price, quantity = fields
+    for product in storage:
+        if product[NAME_INDEX] == name:
+            print(f"product name '{name}' is already taken")
+            return None
+    product_id = generate_product_id(storage)
+    normalized_price = normalize_price(price)
+    storage.append((product_id, name, normalized_price, quantity))
+    return product_id
 
 
 def read_product(storage: list[Product], product_id: int) -> Product | None:
@@ -73,7 +85,11 @@ def read_product(storage: list[Product], product_id: int) -> Product | None:
         printed in that case).
     """
     # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] == product_id:
+            return product
+    print(f"no product with id {product_id}")
+    return None
 
 
 def update_product(
@@ -100,7 +116,15 @@ def update_product(
         left unchanged and a message is printed).
     """
     # TODO: реализуйте функцию
-    return (0, "", Decimal(0), 0)
+    name, price, quantity = fields
+    price = normalize_price(price)
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] == product_id:
+            updated_product = (product_id, name, price, quantity)
+            storage[storage.index(product)] = updated_product
+            return updated_product
+    print(f"no product with id {product_id}")
+    return None
 
 
 def delete_product(storage: list[Product], product_id: int) -> int | None:
@@ -117,4 +141,9 @@ def delete_product(storage: list[Product], product_id: int) -> int | None:
         a message is printed).
     """
     # TODO: реализуйте функцию
-    return 0
+    for product in storage:
+        if product[PRODUCT_ID_INDEX] == product_id:
+            storage.remove(product)
+            return product_id
+    print(f"no product with id {product_id}")
+    return None

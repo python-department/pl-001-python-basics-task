@@ -13,14 +13,17 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-import time  # noqa: F401
+import time
 
-from .constants import (  # noqa: F401
+from .constants import (
     EPOCH_MS_DEFAULT,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
+    NODE_ID_SHIFT,
+    SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
     TIMESTAMP_MS_MAX,
+    TIMESTAMP_SHIFT,
 )
 
 
@@ -34,8 +37,7 @@ def read_current_millis(epoch_ms: int) -> int:
         The count of whole milliseconds between ``epoch_ms`` and now. May be
         negative if ``epoch_ms`` lies in the future.
     """
-    # TODO: реализуйте функцию
-    return 0
+    return int(time.time() * 1000) - epoch_ms
 
 
 def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> int:
@@ -51,7 +53,8 @@ def decode_timestamp_ms(snowflake_id: int, epoch_ms: int = EPOCH_MS_DEFAULT) -> 
         generated.
     """
     # TODO: реализуйте функцию
-    return 0
+    time_res = snowflake_id >> TIMESTAMP_SHIFT
+    return time_res + epoch_ms
 
 
 def decode_node_id(snowflake_id: int) -> int:
@@ -65,7 +68,8 @@ def decode_node_id(snowflake_id: int) -> int:
         ``[0, NODE_ID_MAX]``.
     """
     # TODO: реализуйте функцию
-    return 0
+    node_id = (snowflake_id >> SEQUENCE_ID_BITS) & NODE_ID_MAX
+    return node_id
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
@@ -79,7 +83,8 @@ def decode_sequence_id(snowflake_id: int) -> int:
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
     # TODO: реализуйте функцию
-    return 0
+    sequence_id = snowflake_id & SEQUENCE_ID_MAX
+    return sequence_id
 
 
 def generate_snowflake_id(
@@ -111,4 +116,19 @@ def generate_snowflake_id(
         cases an explanatory message is printed to stdout first.
     """
     # TODO: реализуйте функцию
-    return 0
+    if not (0 <= node_id <= NODE_ID_MAX):
+        print(f"node_id must be in [0, {NODE_ID_MAX}], but you wrote {node_id}")
+        return None
+    if not (0 <= sequence_id <= SEQUENCE_ID_MAX):
+        print(
+            f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], but you wrote {sequence_id}"
+        )
+        return None
+    timestamp = read_current_millis(epoch_ms)
+    if not (0 <= timestamp <= TIMESTAMP_MS_MAX):
+        print("overflows")
+        return None
+    node_res = node_id << NODE_ID_SHIFT
+    timestamp_res = timestamp << TIMESTAMP_SHIFT
+    result = timestamp_res | node_res | sequence_id
+    return result
