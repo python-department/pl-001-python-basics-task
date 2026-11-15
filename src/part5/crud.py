@@ -191,9 +191,11 @@ def update_product(
     if (old_product := storage.get(product_id)) is None:
         return print(f"no product with id {product_id}")
 
+    if PRICE_KEY in fields:
+        fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+    
     if NAME_KEY in fields:
-        new_name = fields.get(NAME_KEY, "")
-        new_name = normalize_product_name(new_name)
+        new_name = normalize_product_name(fields[NAME_KEY])    
 
         if not new_name:
             return print("product name must not be blank")
@@ -207,8 +209,7 @@ def update_product(
 
         fields[NAME_KEY] = new_name
 
-    if PRICE_KEY in fields:
-        fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+   
 
     old_product.update(fields)
 
