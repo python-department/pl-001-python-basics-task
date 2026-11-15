@@ -1,120 +1,120 @@
-"""Standalone helpers shared by the part5 storage and CRUD modules.
-
-Normalisation:
-
-* :func:`normalize_price` rounds a raw :class:`~decimal.Decimal` amount to
-  the fixed number of fractional digits (:data:`PRICE_PRECISION`) that
-  every stored price uses, keeping currency values free of binary
-  floating-point error.
-* :func:`normalize_product_name` strips surrounding whitespace from a
-  product name, collapses every internal run of whitespace to a single
-  space and lower-cases it, giving every stored name a single canonical
-  form.
-
-Presentation:
-
-* :func:`get_storage_str_representation` renders the whole store as a
-  text table meant to be printed to a terminal; each column is sized to
-  the longest value it holds in that particular call.
-* :func:`get_stats_str_representation` renders the call statistics gathered
-  by :func:`~src.part5.decorators.collect_stats` as a table of the same
-  look, with the success rate of every command as a percentage.
-"""
-
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
+from .storage import (
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+    Product,
+)
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+ID_KEY: Final[str] = TABLE_HEADERS[0]
+
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
+COMMAND_NAME_KEY: Final[str] = STATS_TABLE_HEADERS[0]
+SUCCESS_RATE_KEY: Final[str] = STATS_TABLE_HEADERS[3]
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    normalized_name = " ".join(name.split()).lower()
+    return normalized_name
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def get_success_rate(success: int, fails: int) -> str:
+    calls_quantity = success + fails
+    if calls_quantity == 0:
+        return "0.00%"
+
+    return f"{success / calls_quantity:.2%}"
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    lens = {
+        key: [len(h)]
+        for key, h in zip((ID_KEY, NAME_KEY, PRICE_KEY, QUANTITY_KEY), TABLE_HEADERS)
+    }
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    for product_id, product in storage.items():
+        lens[ID_KEY].append(len(str(product_id)))
+        for key in (NAME_KEY, PRICE_KEY, QUANTITY_KEY):
+            lens[key].append(len(str(product[key])))
 
-    Args:
-        storage: The product store to render.
+    maxlens = list(map(max, lens.values()))
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage``, in insertion order. When
-        ``storage`` is empty only the header and separator rows are
-        returned, sized to the header labels.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    header_str = "|"
+    separating_str = "|"
+    for header, length in zip(TABLE_HEADERS, maxlens):
+        header_str += f" {header.ljust(length)} |"
+        separating_str += "-" + "-" * length + "-|"
+
+    table = header_str + "\n" + separating_str
+
+    for product_id, product in storage.items():
+        table += "\n|"
+        elems = (
+            product_id,
+            product[NAME_KEY],
+            product[PRICE_KEY],
+            product[QUANTITY_KEY],
+        )
+        for elem, length in zip(elems, maxlens):
+            table += f" {str(elem).ljust(length)} |"
+
+    return table
 
 
 def get_stats_str_representation(registry: Registry) -> str:
-    """Render the call statistics as a text table with data-sized columns.
+    lens = {
+        key: [len(h)]
+        for key, h in zip(
+            (COMMAND_NAME_KEY, SUCCESS_KEY, FAILS_KEY, SUCCESS_RATE_KEY),
+            STATS_TABLE_HEADERS,
+        )
+    }
 
-    The table has the columns named by :data:`STATS_TABLE_HEADERS` -- command
-    name, number of successful calls, number of failed calls and success
-    rate. It is laid out like the one from
-    :func:`get_storage_str_representation`: every column is as wide as the
-    longest value it carries, its header counted.
+    for command_name, statistics in registry.items():
+        lens[COMMAND_NAME_KEY].append(len(command_name))
+        for key in (SUCCESS_KEY, FAILS_KEY):
+            lens[key].append(len(str(statistics[key])))
 
-    Args:
-        registry: The statistics to render, a mapping of command name to the
-            counters kept by :func:`~src.part5.decorators.collect_stats`.
+    maxlens = list(map(max, lens.values()))
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then one
-        row per registry entry in insertion order. When ``registry`` is
-        empty only the header and separator rows are returned, sized to the
-        header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    header_str = "|"
+    separating_str = "|"
+    for header, length in zip(STATS_TABLE_HEADERS, maxlens):
+        header_str += f" {header.ljust(length)} |"
+        separating_str += "-" + "-" * length + "-|"
+
+    table = header_str + "\n" + separating_str
+
+    for command_name, statistics in registry.items():
+        table += "\n|"
+
+        successes = statistics[SUCCESS_KEY]
+        fails = statistics[FAILS_KEY]
+        elems = (
+            command_name,
+            successes,
+            fails,
+            get_success_rate(successes, fails),
+        )
+        for elem, length in zip(elems, maxlens):
+            table += f" {str(elem).ljust(length)} |"
+
+    return table
