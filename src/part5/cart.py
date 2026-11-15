@@ -1,4 +1,4 @@
-from .storage import Product, QUANTITY_KEY
+from .storage import QUANTITY_KEY, Product
 
 
 def add_to_cart(

@@ -11,8 +11,8 @@ from .crud import (
 )
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import (
-    get_storage_str_representation,
     get_stats_str_representation,
+    get_storage_str_representation,
 )
 
 
@@ -93,8 +93,7 @@ def run_command(
 
     if command == "read" and len(parts) == 2:
         product_id = int(parts[1])
-        result = read_product(storage, product_id)
-        print_result(result)
+        print_result(read_product(storage, product_id))
         return True
 
     if command == "update" and len(parts) >= 5:
@@ -109,13 +108,14 @@ def run_command(
             QUANTITY_KEY: quantity,
         }
 
-        result = update_product(
-            storage,
-            product_names,
-            product_id,
-            fields,
+        print_result(
+            update_product(
+                storage,
+                product_names,
+                product_id,
+                fields,
+            )
         )
-        print_result(result)
         return True
 
     if command == "delete" and len(parts) == 2:

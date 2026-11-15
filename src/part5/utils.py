@@ -1,4 +1,4 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .decorators import (
@@ -6,7 +6,7 @@ from .decorators import (
     SUCCESS_KEY,
     Registry,
 )
-from .storage import Product, NAME_KEY, PRICE_KEY, QUANTITY_KEY
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
 PRICE_PRECISION: Final[int] = 2
