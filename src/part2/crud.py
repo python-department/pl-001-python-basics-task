@@ -14,13 +14,13 @@ is already taken.
 
 from decimal import Decimal
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_INDEX,
     PRODUCT_ID_INDEX,
     PRODUCT_ID_MIN,
     Product,
 )
-from .utils import normalize_price  # noqa: F401
+from .utils import normalize_price
 
 
 def generate_product_id(storage: list[Product]) -> int:
@@ -41,6 +41,7 @@ def generate_product_id(storage: list[Product]) -> int:
     for product in storage:
         max_id = max(max_id, product[PRODUCT_ID_INDEX])
     return max_id + 1
+
 
 def create_product(
     storage: list[Product], fields: tuple[str, Decimal, int]
