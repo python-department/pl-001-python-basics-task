@@ -21,21 +21,19 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Final
 
 from .decorators import Registry
 from .storage import Product
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 # TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
 STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
 
@@ -50,8 +48,8 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    
+    return price.quantize(PRICE_STEP, ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -69,7 +67,7 @@ def normalize_product_name(name: str) -> str:
         whitespace.
     """
     # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return " ".join(name.split()).lower()
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
