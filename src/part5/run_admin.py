@@ -100,9 +100,7 @@ def run_command(
                 QUANTITY_KEY: int(args[-1]),
             }
             print_result(
-                create_product(
-                    storage, product_names, fields, generate_snowflake_id
-                )
+                create_product(storage, product_names, fields, generate_snowflake_id)
             )
         case ["read", id_str]:
             print_result(read_product(storage, int(id_str)))
@@ -112,9 +110,7 @@ def run_command(
                 PRICE_KEY: Decimal(args[-2]),
                 QUANTITY_KEY: int(args[-1]),
             }
-            print_result(
-                update_product(storage, product_names, int(id_str), fields)
-            )
+            print_result(update_product(storage, product_names, int(id_str), fields))
         case ["delete", id_str]:
             print_result(delete_product(storage, product_names, int(id_str)))
         case _:
