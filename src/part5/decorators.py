@@ -54,7 +54,7 @@ def collect_stats[**P, R](
         docstring as the original (see :func:`functools.wraps`).
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[P, R | None]) -> Callable[P, R | None]:
         if key in registry:
             print(f"stats key {key!r} is already registered")
             return func
@@ -64,7 +64,7 @@ def collect_stats[**P, R](
         }
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
             result = func(*args, **kwargs)
             if result is None:
                 registry[key][FAILS_KEY] += 1

@@ -21,6 +21,7 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
+from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
@@ -79,11 +80,11 @@ def separator(widths: list[int]) -> str:
     return "|" + "|".join("-" * (w + 2) for w in widths) + "|"
 
 
-def format_row(values: list[str], widths: list[int]) -> str:
+def format_row(values: Sequence[str], widths: Sequence[int]) -> str:
     return "| " + " | ".join(v.ljust(w) for v, w in zip(values, widths)) + " |"
 
 
-def create_table(headers: tuple[str, ...], rows: list[list[str]]) -> str:
+def create_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> str:
     widths = [max([len(h)] + [len(r[i]) for r in rows]) for i, h in enumerate(headers)]
     lines = [format_row(list(headers), widths), separator(widths)]
     lines += [format_row(row, widths) for row in rows]

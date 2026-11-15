@@ -105,9 +105,9 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         returned, sized to the header labels.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    rows = []
+    rows: list[tuple[str, ...]] = []
     for ID, data in storage.items():
-        rows.append(ID, data[NAME_KEY], str(data[PRICE_KEY]), str(data[QUANTITY_KEY]))
+        rows.append((ID, data[NAME_KEY], str(data[PRICE_KEY]), str(data[QUANTITY_KEY])))
     widths = []
     for i, header in enumerate(TABLE_HEADERS):
         max_len = len(header)

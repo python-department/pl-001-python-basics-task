@@ -205,7 +205,7 @@ def update_product(
         QUANTITY_KEY: fields[QUANTITY_KEY],
     }
 
-    return product_id
+    return storage[product_id]
 
 
 @collect_stats(DELETE_KEY, STATS_REGISTRY)
