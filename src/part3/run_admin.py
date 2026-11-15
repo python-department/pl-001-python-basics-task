@@ -29,7 +29,7 @@ store is left untouched and the loop keeps running; only ``exit`` stops
 it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
 from .crud import (  # noqa: F401
@@ -39,12 +39,23 @@ from .crud import (  # noqa: F401
     update_product,
 )
 from .storage import Product
-from .utils import get_storage_str_representation  # noqa: F401
+from .utils import get_storage_str_representation
 
 
 # TODO: задайте приглашение и текст справки
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                          show this message
+  exit                          leave the console
+  show                          print the whole store as a table
+  create <name...> <price> <quantity>  add a product, print its new id
+  read <id>                     print the product with that id
+  update <id> <name...> <price> <quantity>  overwrite that product's fields
+  delete <id>                   remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
@@ -55,6 +66,7 @@ def show_help() -> None:
     note on how multi-word names are parsed.
     """
     # TODO: реализуйте функцию
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
@@ -66,6 +78,8 @@ def print_result(result: object) -> None:
             printed in that case.
     """
     # TODO: реализуйте функцию
+    if result is not None:
+        print(result)
 
 
 def run_command(storage: list[Product], line: str) -> bool:
@@ -89,13 +103,51 @@ def run_command(storage: list[Product], line: str) -> bool:
             ``update`` does not parse as a decimal number.
     """
     # TODO: реализуйте функцию
-    return False
+    parts = line.split()
+    if not parts:
+        return True
+    command = parts[0]
+    if command == "help":
+        show_help()
+    elif command == "exit":
+        return False
+    elif command == "show":
+        print(get_storage_str_representation(storage))
+    elif command == "read" or command == "delete":
+        if len(parts) != 2:
+            print(f"'{line}' is not a command")
+            return True
+        product_id = int(parts[1])
+        print_result(read_product(storage, product_id))
+    elif command == "create":
+        if len(parts) < 4:
+            print(f"'{line}' is not a command")
+            return True
+        name = " ".join(parts[1:-2])
+        price = Decimal(parts[-2])
+        quantity = int(parts[-1])
+        result = create_product(storage, (name, price, quantity))
+        print_result(result)
+    elif command == "update":
+        if len(parts) < 5:
+            print(f"'{line}' is not a command")
+            return True
+        product_id = int(parts[1])
+        name = " ".join(parts[2:-2])
+        price = Decimal(parts[-2])
+        quantity = int(parts[-1])
+        updated = update_product(storage, product_id, (name, price, quantity))
+        print_result(updated)
+    else:
+        print(f"'{line}' is not a command")
+
+    return True
 
 
 def main() -> None:
     """Run the admin console until the ``exit`` command is entered.
 
-    A single product store is created empty and kept in memory for the
+    A sngle product store is created empty and kept in memory for the
     whole session. Each iteration reads one line from stdin, strips its
     surrounding whitespace and hands it to :func:`run_command`. A line
     that names a command but whose id, price or quantity argument does
