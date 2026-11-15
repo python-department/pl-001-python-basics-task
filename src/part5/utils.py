@@ -21,24 +21,28 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
-from typing import Final
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import (
+    Registry, 
+    SUCCESS_KEY,
+    FAILS_KEY,
+)
+from .storage import (
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+    Product,
+)
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
-
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", NAME_KEY, PRICE_KEY, QUANTITY_KEY)
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ("command name", SUCCESS_KEY, FAILS_KEY, "success rate")
 
 def normalize_price(price: Decimal) -> Decimal:
     """Round a price to the precision every stored record uses.
@@ -50,8 +54,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,14 +71,39 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return " ".join(name.lower().split())
+
+def _column_widths(headers: list[str], rows: list[list[str]]) -> dict[str, int]:
+    widths = {header: len(header) for header in headers}
+    for row in rows:
+        for header, cell in zip(headers, row):
+            widths[header] = max(widths[header], len(cell))
+    return widths
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def _render_line(
+    cells: list[str], headers: list[str], widths: dict[str, int]
+) -> str:
+    return "".join(
+        f"| {cell:<{widths[h]}} " for h, cell in zip(headers, cells)
+    ) + "|"
 
 
-def get_storage_str_representation(storage: dict[int, Product]) -> str:
+def _render_separator(headers: list[str], widths: dict[str, int]) -> str:
+    return "".join(f"|{'-' * (widths[h] + 2)}" for h in headers) + "|"
+
+
+def _render_table(headers: list[str], rows: list[list[str]]) -> str:
+    widths = _column_widths(headers, rows)
+    lines = [
+        _render_line(headers, headers, widths),
+        _render_separator(headers, widths),
+    ]
+    lines += [_render_line(row, headers, widths) for row in rows]
+    return "\n".join(lines)
+
+
+def get_storage_str_representation(storage: dict[str, Product]) -> str:
     """Render the product store as a text table with data-sized columns.
 
     The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
@@ -93,9 +121,19 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    headers = TABLE_HEADERS
+    rows = [
+        [str(key), str(product["name"]), str(product["price"]), str(product["quantity"])]
+        for key, product in storage.items()
+    ]
+    print(_render_table(headers, rows))
+    return _render_table(headers, rows)
 
+def _rate(counters: dict[str, int]) -> str:
+    total = counters[SUCCESS_KEY] + counters[FAILS_KEY]
+    if total == 0:
+        return f"0.00%"
+    return f"{counters[SUCCESS_KEY] / total:.2%}"
 
 def get_stats_str_representation(registry: Registry) -> str:
     """Render the call statistics as a text table with data-sized columns.
@@ -116,5 +154,9 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    headers = STATS_TABLE_HEADERS
+    rows = [
+        [name, str(counters[SUCCESS_KEY]), str(counters[FAILS_KEY]), _rate(counters)]
+        for name, counters in registry.items()
+    ]
+    return _render_table(headers, rows)
