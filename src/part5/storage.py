@@ -34,8 +34,6 @@ successful create, update and delete.
 """
 
 from typing import Any, Final
-
-
 type Product = dict[str, Any]
 
 # TODO: задайте имена полей записи (используйте своё решение части 4)
