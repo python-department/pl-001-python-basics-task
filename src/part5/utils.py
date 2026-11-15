@@ -21,23 +21,28 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 # TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -50,8 +55,10 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    ratio = price / PRICE_STEP
+    steps = ratio.quantize(Decimal("1."), rounding=ROUND_HALF_UP)
+    real_price = steps * PRICE_STEP
+    return real_price
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,11 +75,46 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    pars_name = name.split()
+    norm_list = [norm_word.lower() for word in pars_name if (norm_word := word.strip())]
+    norm_name = " ".join(norm_list)
+    return norm_name
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def make_list_from_product(product: Product) -> list[str]:
+    return [
+        product[NAME_KEY],
+        str(product[PRICE_KEY]),
+        str(product[QUANTITY_KEY]),
+    ]
+
+
+def render_row(cells: list[str], widths: list[int]) -> str:
+    parts = ["|"]
+    for cell, width in zip(cells, widths):
+        parts.append(" " + str(cell).ljust(width) + " ")
+        parts.append("|")
+    return "".join(parts)
+
+
+def calculate_of_width(storage: dict[int, Product]) -> list[int]:
+    widths = [len(word) for word in TABLE_HEADERS]
+    ID_PLACE = 0
+    SHIFT = 1
+
+    for key in storage:
+        widths[ID_PLACE] = max(widths[ID_PLACE], len(str(key)))  # str!
+
+    for product in storage.values():
+        for i, value in enumerate(make_list_from_product(product)):
+            idx = i + SHIFT
+            widths[idx] = max(widths[idx], len(value))
+
+    return widths
+
+
+def render_sep(widths: list[int]) -> str:
+    return "|" + "|".join("-" * (w + 2) for w in widths) + "|"
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
@@ -93,8 +135,16 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    widths = calculate_of_width(storage)
+
+    lines = [
+        render_row(list(TABLE_HEADERS), widths),
+        render_sep(widths),
+    ]
+    for key, product in storage.items():
+        lines.append(render_row([str(key)] + make_list_from_product(product), widths))
+
+    return "\n".join(lines)
 
 
 def get_stats_str_representation(registry: Registry) -> str:
@@ -116,5 +166,30 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    rows: list[list[str]] = []
+    for name, stats in registry.items():
+        success = stats[SUCCESS_KEY]
+        fails = stats[FAILS_KEY]
+        total = success + fails
+        if total == 0:
+            rate = "0.00%"
+        else:
+            pct = (Decimal(success) * Decimal(100) / Decimal(total)).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            rate = f"{pct}%"
+        rows.append([name, str(success), str(fails), rate])
+
+    widths = [len(h) for h in STATS_TABLE_HEADERS]
+    for row in rows:
+        for i, cell in enumerate(row):
+            widths[i] = max(widths[i], len(cell))
+
+    lines = [
+        render_row(list(STATS_TABLE_HEADERS), widths),
+        render_sep(widths),
+    ]
+    for row in rows:
+        lines.append(render_row(row, widths))
+
+    return "\n".join(lines)
