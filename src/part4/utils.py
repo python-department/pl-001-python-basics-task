@@ -18,10 +18,10 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import (  # noqa: F401
+from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
@@ -33,14 +33,14 @@ from .storage import (  # noqa: F401
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 3)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final[Decimal] = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы (используйте своё решение части 3)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -53,8 +53,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -71,8 +70,10 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    list_of_words = name.split()
+    name = " ".join(list_of_words)
+    name = name.lower()
+    return name
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -97,4 +98,23 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         returned, sized to the header labels.
     """
     # TODO: реализуйте функцию (используйте своё решение части 3)
-    return ""
+    mxlen1 = len(TABLE_HEADERS[0])
+    mxlen2 = len(TABLE_HEADERS[1])
+    mxlen3 = len(TABLE_HEADERS[2])
+    mxlen4 = len(TABLE_HEADERS[3])
+    for item_id, product in storage.items():
+        name = str(product[NAME_KEY])
+        price = str(product[PRICE_KEY])
+        quantity = str(product[QUANTITY_KEY])
+        mxlen1 = max(mxlen1, len(item_id))
+        mxlen2 = max(mxlen2, len(name))
+        mxlen3 = max(mxlen3, len(price))
+        mxlen4 = max(mxlen4, len(quantity))
+    s1 = f"| {TABLE_HEADERS[0].ljust(mxlen1)} | {TABLE_HEADERS[1].ljust(mxlen2)} | {TABLE_HEADERS[2].ljust(mxlen3)} | {TABLE_HEADERS[3].ljust(mxlen4)} |"
+    s2 = f"|{'-' * (mxlen1 + 2)}|{'-' * (mxlen2 + 2)}|{'-' * (mxlen3 + 2)}|{'-' * (mxlen4 + 2)}|"
+    snext = [
+        f"| {str(item_id).ljust(mxlen1)} | {str(product[NAME_KEY]).ljust(mxlen2)} | {str(product[PRICE_KEY]).ljust(mxlen3)} | {str(product[QUANTITY_KEY]).ljust(mxlen4)} |"
+        for item_id, product in storage.items()
+    ]
+    rows = [s1, s2, *snext]
+    return "\n".join(rows)
