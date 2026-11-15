@@ -28,6 +28,7 @@ from .constants import (
 )
 
 
+
 def read_current_millis(epoch_ms: int) -> int:
     """Read the number of milliseconds elapsed since the custom epoch.
 
