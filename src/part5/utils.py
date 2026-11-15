@@ -21,6 +21,7 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
+from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
@@ -80,7 +81,9 @@ def normalize_product_name(name: str) -> str:
     return " ".join(name.lower().split())
 
 
-def _column_widths(headers: list[str], rows: list[list[str]]) -> dict[str, int]:
+def _column_widths(
+    headers: Sequence[str], rows: Sequence[Sequence[str]]
+) -> dict[str, int]:
     widths = {header: len(header) for header in headers}
     for row in rows:
         for header, cell in zip(headers, row):
@@ -88,15 +91,17 @@ def _column_widths(headers: list[str], rows: list[list[str]]) -> dict[str, int]:
     return widths
 
 
-def _render_line(cells: list[str], headers: list[str], widths: dict[str, int]) -> str:
+def _render_line(
+    cells: Sequence[str], headers: Sequence[str], widths: dict[str, int]
+) -> str:
     return "".join(f"| {cell:<{widths[h]}} " for h, cell in zip(headers, cells)) + "|"
 
 
-def _render_separator(headers: list[str], widths: dict[str, int]) -> str:
+def _render_separator(headers: Sequence[str], widths: dict[str, int]) -> str:
     return "".join(f"|{'-' * (widths[h] + 2)}" for h in headers) + "|"
 
 
-def _render_table(headers: list[str], rows: list[list[str]]) -> str:
+def _render_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> str:
     widths = _column_widths(headers, rows)
     lines = [
         _render_line(headers, headers, widths),
@@ -106,7 +111,7 @@ def _render_table(headers: list[str], rows: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
-def get_storage_str_representation(storage: dict[str, Product]) -> str:
+def get_storage_str_representation(storage: dict[int, Product]) -> str:
     """Render the product store as a text table with data-sized columns.
 
     The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
@@ -134,7 +139,7 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
         ]
         for key, product in storage.items()
     ]
-    print(_render_table(headers, rows))
+
     return _render_table(headers, rows)
 
 

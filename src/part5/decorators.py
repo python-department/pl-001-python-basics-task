@@ -15,7 +15,7 @@ a falsy one such as ``0``, counts as a success.
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, Final
+from typing import Final
 
 
 SUCCESS_KEY: Final[str] = "success"
@@ -61,7 +61,7 @@ def collect_stats[**P, R](
         registry[key] = {SUCCESS_KEY: 0, FAILS_KEY: 0}
 
         @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             result = func(*args, **kwargs)
             if result is not None:
                 registry[key][SUCCESS_KEY] += 1

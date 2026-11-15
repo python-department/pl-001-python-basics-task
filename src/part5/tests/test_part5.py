@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from decimal import Decimal, InvalidOperation
 
 import pytest
@@ -35,7 +36,7 @@ def product(name: str = "hammer", quantity: int = 10) -> Product:
 
 
 @pytest.fixture(autouse=True)
-def reset_stats():
+def reset_stats() -> Iterator[None]:
     """Keep the process-wide registry isolated between tests."""
     registry = crud_module.STATS_REGISTRY
     previous = {key: value.copy() for key, value in registry.items()}
@@ -64,11 +65,16 @@ class TestSnowflakeGenerator:
         monkeypatch.setattr(sf, "read_current_millis", lambda _epoch: now[0])
 
         generate_id = sf.get_snowflake_id_generator(node_id=5, epoch_ms=0)
+        assert generate_id is not None  # сужает тип до Callable[[], int | None]
         assert capsys.readouterr().out == ""  # creating it does not issue an ID
 
-        first, second = generate_id(), generate_id()
+        first = generate_id()
+        second = generate_id()
         now[0] += 1
         third = generate_id()
+        assert first is not None
+        assert second is not None
+        assert third is not None
 
         assert [sf.decode_node_id(value) for value in (first, second, third)] == [
             5,
@@ -112,10 +118,14 @@ class TestSnowflakeGenerator:
         generate_id = sf.get_snowflake_id_generator(node_id=NODE_ID_MAX, epoch_ms=0)
 
         assert generate_id is not None
-        assert sf.decode_node_id(generate_id()) == NODE_ID_MAX
+        value = generate_id()
+        assert value is not None
+        assert sf.decode_node_id(value) == NODE_ID_MAX
         assert capsys.readouterr().out == ""
 
-    def test_rejects_future_epoch_at_creation(self, monkeypatch, capsys) -> None:
+    def test_rejects_future_epoch_at_creation(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         monkeypatch.setattr(sf, "read_current_millis", lambda _epoch: -1)
 
         assert sf.get_snowflake_id_generator(node_id=0, epoch_ms=123) is None
@@ -131,9 +141,10 @@ class TestSnowflakeGenerator:
         generate_id = sf.get_snowflake_id_generator(epoch_ms=0)
         assert generate_id is not None
 
-        last = None
+        last: int | None = None
         for _ in range(SEQUENCE_ID_MAX + 1):
             last = generate_id()
+        assert last is not None
         assert sf.decode_sequence_id(last) == SEQUENCE_ID_MAX
 
         assert generate_id() is None
@@ -144,16 +155,20 @@ class TestSnowflakeGenerator:
 
         now[0] += 1
         recovered = generate_id()
+        assert recovered is not None
         assert sf.decode_timestamp_ms(recovered, 0) == 51
         assert sf.decode_sequence_id(recovered) == 0
 
-    def test_timestamp_limit_is_inclusive(self, monkeypatch, capsys) -> None:
+    def test_timestamp_limit_is_inclusive(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         now = [TIMESTAMP_MS_MAX]
         monkeypatch.setattr(sf, "read_current_millis", lambda _epoch: now[0])
         generate_id = sf.get_snowflake_id_generator(epoch_ms=0)
         assert generate_id is not None
 
         last_valid = generate_id()
+        assert last_valid is not None
         assert sf.decode_timestamp_ms(last_valid, 0) == TIMESTAMP_MS_MAX
 
         now[0] += 1
@@ -168,8 +183,16 @@ class TestSnowflakeGenerator:
         monkeypatch.setattr(sf, "read_current_millis", lambda _epoch: 100)
         generate_a = sf.get_snowflake_id_generator(node_id=1, epoch_ms=0)
         generate_b = sf.get_snowflake_id_generator(node_id=2, epoch_ms=0)
+        assert generate_a is not None
+        assert generate_b is not None
 
-        a_first, a_second, b_first = generate_a(), generate_a(), generate_b()
+        a_first = generate_a()
+        a_second = generate_a()
+        b_first = generate_b()
+        assert a_first is not None
+        assert a_second is not None
+        assert b_first is not None
+
         assert (sf.decode_node_id(a_first), sf.decode_sequence_id(a_first)) == (1, 0)
         assert (sf.decode_node_id(a_second), sf.decode_sequence_id(a_second)) == (1, 1)
         assert (sf.decode_node_id(b_first), sf.decode_sequence_id(b_first)) == (2, 0)
@@ -184,10 +207,10 @@ class TestCollectStats:
     def test_task_divide_example_counts_zero_as_success_and_none_as_failure(
         self,
     ) -> None:
-        registry = {}
+        registry: dict[str, dict[str, int]] = {}
 
         @collect_stats("divide", registry)
-        def divide(a, b):
+        def divide(a: int, b: int) -> float | None:
             "Divide two numbers."
             if b == 0:
                 print("division by zero")
@@ -205,10 +228,10 @@ class TestCollectStats:
     def test_duplicate_key_returns_original_function_and_preserves_registry(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        old_stats = {SUCCESS_KEY: 7, FAILS_KEY: 3}
-        registry = {"create": old_stats}
+        old_stats: dict[str, int] = {SUCCESS_KEY: 7, FAILS_KEY: 3}
+        registry: dict[str, dict[str, int]] = {"create": old_stats}
 
-        def operation(value):
+        def operation(value: int) -> int:
             return value * 2
 
         decorated = collect_stats("create", registry)(operation)
@@ -219,14 +242,14 @@ class TestCollectStats:
         assert capsys.readouterr().out == "stats key 'create' is already registered\n"
 
     def test_different_keys_have_independent_counters(self) -> None:
-        registry = {}
+        registry: dict[str, dict[str, int]] = {}
 
         @collect_stats("first", registry)
-        def first():
+        def first() -> bool:
             return False
 
         @collect_stats("second", registry)
-        def second():
+        def second() -> None:
             return None
 
         assert first() is False
@@ -258,11 +281,11 @@ class TestChangedCrud:
         assert not hasattr(crud_module, "generate_product_id")
 
     def test_create_passes_generated_id_into_integer_keyed_storage(self) -> None:
-        storage = {}
-        names = set()
-        calls = []
+        storage: dict[int, Product] = {}
+        names: set[str] = set()
+        calls: list[None] = []
 
-        def generate_id():
+        def generate_id() -> int:
             calls.append(None)
             return ID_1
 
@@ -304,12 +327,18 @@ class TestChangedCrud:
         ],
     )
     def test_invalid_name_does_not_call_id_factory_or_mutate_state(
-        self, name, initial_names, message, capsys
+        self,
+        name: str,
+        initial_names: set[str],
+        message: str,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
-        storage = {ID_1: product("cordless drill")}
-        names = set(initial_names)
-        before_storage = {key: value.copy() for key, value in storage.items()}
-        calls = []
+        storage: dict[int, Product] = {ID_1: product("cordless drill")}
+        names: set[str] = set(initial_names)
+        before_storage: dict[int, Product] = {
+            key: value.copy() for key, value in storage.items()
+        }
+        calls: list[None] = []
 
         result = crud_module.create_product(
             storage,
@@ -328,11 +357,13 @@ class TestChangedCrud:
             FAILS_KEY: 1,
         }
 
-    def test_none_from_id_factory_is_failure_without_extra_output(self, capsys) -> None:
-        storage = {}
-        names = set()
+    def test_none_from_id_factory_is_failure_without_extra_output(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        storage: dict[int, Product] = {}
+        names: set[str] = set()
 
-        def unavailable_id():
+        def unavailable_id() -> None:
             print("sequence exhausted")
 
         assert (
@@ -384,10 +415,10 @@ class TestIntegerIdsOutsideCrud:
     def test_cart_accepts_integer_ids_without_changing_name_index_or_stats(
         self,
     ) -> None:
-        storage = {ID_1: product(quantity=7)}
-        names = {"hammer"}
-        cart = {}
-        stats_before = {
+        storage: dict[int, Product] = {ID_1: product(quantity=7)}
+        names: set[str] = {"hammer"}
+        cart: dict[int, int] = {}
+        stats_before: dict[str, dict[str, int]] = {
             key: value.copy() for key, value in crud_module.STATS_REGISTRY.items()
         }
 
@@ -459,9 +490,11 @@ class TestStatsTable:
 
 
 class TestAdminChanges:
-    def test_create_command_uses_snowflake_adapter(self, capsys) -> None:
-        storage = {}
-        names = set()
+    def test_create_command_uses_snowflake_adapter(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        storage: dict[int, Product] = {}
+        names: set[str] = set()
 
         assert (
             admin.run_command(storage, names, "create Gibson SG Junior 89.99 12")
@@ -474,9 +507,11 @@ class TestAdminChanges:
         assert storage[created_id][NAME_KEY] == "gibson sg junior"
         assert names == {"gibson sg junior"}
 
-    def test_numeric_ids_are_converted_for_read_update_and_delete(self, capsys) -> None:
-        storage = {ID_1: product()}
-        names = {"hammer"}
+    def test_numeric_ids_are_converted_for_read_update_and_delete(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        storage: dict[int, Product] = {ID_1: product()}
+        names: set[str] = {"hammer"}
 
         assert admin.run_command(storage, names, f"read {ID_1}") is True
         assert "hammer" in capsys.readouterr().out
@@ -493,18 +528,24 @@ class TestAdminChanges:
 
     def test_non_integer_id_raises_value_error(self) -> None:
         """Bad ids surface as ValueError; the REPL layer is what reports them."""
+        storage: dict[int, Product] = {}
+        names: set[str] = set()
         with pytest.raises(ValueError):
-            admin.run_command({}, set(), "read not-an-int")
+            admin.run_command(storage, names, "read not-an-int")
 
     def test_non_decimal_price_raises_invalid_operation(self) -> None:
         """Bad prices surface as decimal.InvalidOperation, not ValueError."""
+        storage: dict[int, Product] = {}
+        names: set[str] = set()
         with pytest.raises(InvalidOperation):
-            admin.run_command({}, set(), "create x abc 5")
+            admin.run_command(storage, names, "create x abc 5")
 
     def test_main_reports_bad_arguments_and_keeps_running(
-        self, monkeypatch, capsys
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
-        inputs = iter(["read not-an-int", "exit"])
+        inputs: Iterator[str] = iter(["read not-an-int", "exit"])
         monkeypatch.setattr("builtins.input", lambda _prompt="": next(inputs))
 
         admin.main()
@@ -512,11 +553,15 @@ class TestAdminChanges:
         out = capsys.readouterr().out
         assert "'read not-an-int' names a command but its arguments are invalid" in out
 
-    def test_stats_command_prints_registry_without_mutating_store(self, capsys) -> None:
-        storage = {ID_1: product()}
-        names = {"hammer"}
-        before_storage = {key: value.copy() for key, value in storage.items()}
-        before_names = names.copy()
+    def test_stats_command_prints_registry_without_mutating_store(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        storage: dict[int, Product] = {ID_1: product()}
+        names: set[str] = {"hammer"}
+        before_storage: dict[int, Product] = {
+            key: value.copy() for key, value in storage.items()
+        }
+        before_names: set[str] = names.copy()
         crud_module.STATS_REGISTRY["create"][SUCCESS_KEY] = 2
 
         assert admin.run_command(storage, names, "stats") is True
@@ -526,11 +571,15 @@ class TestAdminChanges:
         assert storage == before_storage
         assert names == before_names
 
-    def test_stats_with_extra_arguments_is_not_a_command(self, capsys) -> None:
-        assert admin.run_command({}, set(), "stats create") is True
+    def test_stats_with_extra_arguments_is_not_a_command(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        storage: dict[int, Product] = {}
+        names: set[str] = set()
+        assert admin.run_command(storage, names, "stats create") is True
         assert capsys.readouterr().out == "'stats create' is not a command\n"
 
     def test_help_lists_stats_after_delete(self) -> None:
-        help_text = admin.HELP_TEXT
+        help_text: str = admin.HELP_TEXT
         assert help_text.index("delete <id>") < help_text.index("stats")
         assert "print call statistics of the CRUD commands" in help_text

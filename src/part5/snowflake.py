@@ -122,7 +122,7 @@ def get_snowflake_id_generator(
     sequence_id = 0
     current_elapsed = 0
 
-    def generator():
+    def generator() -> int | None:
         nonlocal current_elapsed, sequence_id
         elapsed = read_current_millis(epoch_ms)
         if elapsed > TIMESTAMP_MS_MAX:
