@@ -22,12 +22,12 @@ Presentation:
 """
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Final
+from typing import Final
 
 from .decorators import (
-    Registry, 
-    SUCCESS_KEY,
     FAILS_KEY,
+    SUCCESS_KEY,
+    Registry,
 )
 from .storage import (
     NAME_KEY,
@@ -42,7 +42,13 @@ PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
 TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", NAME_KEY, PRICE_KEY, QUANTITY_KEY)
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ("command name", SUCCESS_KEY, FAILS_KEY, "success rate")
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    SUCCESS_KEY,
+    FAILS_KEY,
+    "success rate",
+)
+
 
 def normalize_price(price: Decimal) -> Decimal:
     """Round a price to the precision every stored record uses.
@@ -73,6 +79,7 @@ def normalize_product_name(name: str) -> str:
     """
     return " ".join(name.lower().split())
 
+
 def _column_widths(headers: list[str], rows: list[list[str]]) -> dict[str, int]:
     widths = {header: len(header) for header in headers}
     for row in rows:
@@ -81,12 +88,8 @@ def _column_widths(headers: list[str], rows: list[list[str]]) -> dict[str, int]:
     return widths
 
 
-def _render_line(
-    cells: list[str], headers: list[str], widths: dict[str, int]
-) -> str:
-    return "".join(
-        f"| {cell:<{widths[h]}} " for h, cell in zip(headers, cells)
-    ) + "|"
+def _render_line(cells: list[str], headers: list[str], widths: dict[str, int]) -> str:
+    return "".join(f"| {cell:<{widths[h]}} " for h, cell in zip(headers, cells)) + "|"
 
 
 def _render_separator(headers: list[str], widths: dict[str, int]) -> str:
@@ -123,17 +126,24 @@ def get_storage_str_representation(storage: dict[str, Product]) -> str:
     """
     headers = TABLE_HEADERS
     rows = [
-        [str(key), str(product["name"]), str(product["price"]), str(product["quantity"])]
+        [
+            str(key),
+            str(product["name"]),
+            str(product["price"]),
+            str(product["quantity"]),
+        ]
         for key, product in storage.items()
     ]
     print(_render_table(headers, rows))
     return _render_table(headers, rows)
 
+
 def _rate(counters: dict[str, int]) -> str:
     total = counters[SUCCESS_KEY] + counters[FAILS_KEY]
     if total == 0:
-        return f"0.00%"
+        return "0.00%"
     return f"{counters[SUCCESS_KEY] / total:.2%}"
+
 
 def get_stats_str_representation(registry: Registry) -> str:
     """Render the call statistics as a text table with data-sized columns.

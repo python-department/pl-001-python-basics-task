@@ -39,14 +39,15 @@ from collections.abc import Callable
 from typing import Any, Final
 
 from .decorators import Registry, collect_stats
+from .snowflake import get_snowflake_id_generator
 from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
     Product,
 )
-from .snowflake import get_snowflake_id_generator
 from .utils import normalize_price, normalize_product_name
+
 
 STATS_REGISTRY: Final[Registry] = {}
 
@@ -56,6 +57,7 @@ UPDATE_KEY: Final[str] = "update"
 DELETE_KEY: Final[str] = "delete"
 
 _generator = get_snowflake_id_generator()
+
 
 def generate_snowflake_id() -> int | None:
     """Issue the next product identifier from the shared Snowflake generator.
@@ -72,6 +74,7 @@ def generate_snowflake_id() -> int | None:
         return None
     return _generator()
 
+
 def _validate_name(
     name: str,
     product_names: set[str],
@@ -84,6 +87,7 @@ def _validate_name(
         print(f"product name '{name}' is already taken")
         return False
     return True
+
 
 @collect_stats(CREATE_KEY, STATS_REGISTRY)
 def create_product(
@@ -191,6 +195,7 @@ def _update_product(
         fields[PRICE_KEY] = new_record[PRICE_KEY]
 
     return record
+
 
 @collect_stats(UPDATE_KEY, STATS_REGISTRY)
 def update_product(

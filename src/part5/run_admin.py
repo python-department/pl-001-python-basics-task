@@ -40,15 +40,15 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Final
 
 from .crud import (
+    STATS_REGISTRY,
     create_product,
     delete_product,
+    generate_snowflake_id,
     read_product,
     update_product,
-    generate_snowflake_id,
-    STATS_REGISTRY,
 )
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
-from .utils import get_storage_str_representation, get_stats_str_representation
+from .utils import get_stats_str_representation, get_storage_str_representation
 
 
 PROMPT: Final[str] = "admin> "
@@ -140,7 +140,7 @@ def run_command(
                     compress_in_dict(
                         " ".join(name_parts), Decimal(price), int(quantity)
                     ),
-                    generate_snowflake_id
+                    generate_snowflake_id,
                 )
             )
         case ["read", id]:

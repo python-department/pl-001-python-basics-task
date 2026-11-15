@@ -130,4 +130,3 @@ def remove_from_cart(
         cart.pop(product_id)
 
     return new_quantity
-

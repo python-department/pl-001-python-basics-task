@@ -119,4 +119,3 @@ class TestDecodeTimestampMs:
         ts = 1000
         sid = ts << 22
         assert sf.decode_timestamp_ms(sid) == ts + EPOCH_MS_DEFAULT
-

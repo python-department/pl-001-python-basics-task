@@ -14,9 +14,8 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-from time import time
-
 from collections.abc import Callable
+from time import time
 
 from .constants import (
     EPOCH_MS_DEFAULT,
@@ -27,6 +26,7 @@ from .constants import (
     SEQUENCE_ID_MAX,
     TIMESTAMP_MS_MAX,
 )
+
 
 def read_current_millis(epoch_ms: int) -> int:
     """Read the number of milliseconds elapsed since the custom epoch.
@@ -81,7 +81,7 @@ def decode_sequence_id(snowflake_id: int) -> int:
         The per-millisecond sequence counter packed into ``snowflake_id``, in
         the range ``[0, SEQUENCE_ID_MAX]``.
     """
-    return (snowflake_id & SEQUENCE_ID_MAX)
+    return snowflake_id & SEQUENCE_ID_MAX
 
 
 def get_snowflake_id_generator(
@@ -121,6 +121,7 @@ def get_snowflake_id_generator(
         return None
     sequence_id = 0
     current_elapsed = 0
+
     def generator():
         nonlocal current_elapsed, sequence_id
         elapsed = read_current_millis(epoch_ms)
@@ -140,4 +141,5 @@ def get_snowflake_id_generator(
         )
         sequence_id += 1
         return gen_id
+
     return generator

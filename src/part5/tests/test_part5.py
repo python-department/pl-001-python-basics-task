@@ -70,8 +70,14 @@ class TestSnowflakeGenerator:
         now[0] += 1
         third = generate_id()
 
-        assert [sf.decode_node_id(value) for value in (first, second, third)] == [5, 5, 5]
-        assert [sf.decode_timestamp_ms(value, 0) for value in (first, second, third)] == [
+        assert [sf.decode_node_id(value) for value in (first, second, third)] == [
+            5,
+            5,
+            5,
+        ]
+        assert [
+            sf.decode_timestamp_ms(value, 0) for value in (first, second, third)
+        ] == [
             123_456,
             123_456,
             123_457,
@@ -87,7 +93,9 @@ class TestSnowflakeGenerator:
 
     @pytest.mark.parametrize("node_id", [-1, NODE_ID_MAX + 1])
     def test_rejects_node_outside_inclusive_bounds(
-        self, node_id: int, monkeypatch: pytest.MonkeyPatch,
+        self,
+        node_id: int,
+        monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         monkeypatch.setattr(sf, "read_current_millis", lambda _epoch: 0)
@@ -111,7 +119,9 @@ class TestSnowflakeGenerator:
         monkeypatch.setattr(sf, "read_current_millis", lambda _epoch: -1)
 
         assert sf.get_snowflake_id_generator(node_id=0, epoch_ms=123) is None
-        assert capsys.readouterr().out == "epoch_ms must not be in the future, got 123\n"
+        assert (
+            capsys.readouterr().out == "epoch_ms must not be in the future, got 123\n"
+        )
 
     def test_counter_exhaustion_recovers_on_next_millisecond(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
@@ -171,7 +181,9 @@ class TestSnowflakeGenerator:
 
 
 class TestCollectStats:
-    def test_task_divide_example_counts_zero_as_success_and_none_as_failure(self) -> None:
+    def test_task_divide_example_counts_zero_as_success_and_none_as_failure(
+        self,
+    ) -> None:
         registry = {}
 
         @collect_stats("divide", registry)
@@ -232,7 +244,9 @@ class TestCollectStats:
 
 class TestChangedCrud:
     def test_generate_snowflake_id_uses_one_increasing_global_generator(self) -> None:
-        before = {key: value.copy() for key, value in crud_module.STATS_REGISTRY.items()}
+        before = {
+            key: value.copy() for key, value in crud_module.STATS_REGISTRY.items()
+        }
 
         first = crud_module.generate_snowflake_id()
         second = crud_module.generate_snowflake_id()
@@ -255,7 +269,11 @@ class TestChangedCrud:
         result = crud_module.create_product(
             storage,
             names,
-            {NAME_KEY: "  Cordless   Drill ", PRICE_KEY: Decimal("89.999"), QUANTITY_KEY: 12},
+            {
+                NAME_KEY: "  Cordless   Drill ",
+                PRICE_KEY: Decimal("89.999"),
+                QUANTITY_KEY: 12,
+            },
             generate_id,
         )
 
@@ -278,8 +296,11 @@ class TestChangedCrud:
         ("name", "initial_names", "message"),
         [
             (" \t\n ", set(), "product name must not be blank\n"),
-            (" CORDLESS   DRILL ", {"cordless drill"},
-             "product name 'cordless drill' is already taken\n"),
+            (
+                " CORDLESS   DRILL ",
+                {"cordless drill"},
+                "product name 'cordless drill' is already taken\n",
+            ),
         ],
     )
     def test_invalid_name_does_not_call_id_factory_or_mutate_state(
@@ -293,7 +314,7 @@ class TestChangedCrud:
         result = crud_module.create_product(
             storage,
             names,
-            {NAME_KEY: name, PRICE_KEY: Decimal("5"), QUANTITY_KEY: 1},
+            {NAME_KEY: name, PRICE_KEY: Decimal(5), QUANTITY_KEY: 1},
             lambda: calls.append(None),
         )
 
@@ -313,14 +334,16 @@ class TestChangedCrud:
 
         def unavailable_id():
             print("sequence exhausted")
-            return None
 
-        assert crud_module.create_product(
-            storage,
-            names,
-            {NAME_KEY: "hammer", PRICE_KEY: Decimal("10"), QUANTITY_KEY: 2},
-            unavailable_id,
-        ) is None
+        assert (
+            crud_module.create_product(
+                storage,
+                names,
+                {NAME_KEY: "hammer", PRICE_KEY: Decimal(10), QUANTITY_KEY: 2},
+                unavailable_id,
+            )
+            is None
+        )
         assert storage == {} and names == set()
         assert capsys.readouterr().out == "sequence exhausted\n"
         assert crud_module.STATS_REGISTRY["create"] == {
@@ -334,8 +357,13 @@ class TestChangedCrud:
 
         assert crud_module.read_product(storage, ID_1) is storage[ID_1]
         assert crud_module.read_product(storage, ID_2) is None
-        assert crud_module.update_product(storage, names, ID_1, {QUANTITY_KEY: 3}) is storage[ID_1]
-        assert crud_module.update_product(storage, names, ID_2, {QUANTITY_KEY: 4}) is None
+        assert (
+            crud_module.update_product(storage, names, ID_1, {QUANTITY_KEY: 3})
+            is storage[ID_1]
+        )
+        assert (
+            crud_module.update_product(storage, names, ID_2, {QUANTITY_KEY: 4}) is None
+        )
         assert crud_module.delete_product(storage, names, ID_1) == ID_1
         assert crud_module.delete_product(storage, names, ID_1) is None
 
@@ -351,13 +379,17 @@ class TestChangedCrud:
 # cart.py and storage table — only the changed integer-ID representation
 # ---------------------------------------------------------------------------
 
- 
+
 class TestIntegerIdsOutsideCrud:
-    def test_cart_accepts_integer_ids_without_changing_name_index_or_stats(self) -> None:
+    def test_cart_accepts_integer_ids_without_changing_name_index_or_stats(
+        self,
+    ) -> None:
         storage = {ID_1: product(quantity=7)}
         names = {"hammer"}
         cart = {}
-        stats_before = {key: value.copy() for key, value in crud_module.STATS_REGISTRY.items()}
+        stats_before = {
+            key: value.copy() for key, value in crud_module.STATS_REGISTRY.items()
+        }
 
         assert add_to_cart(storage, names, cart, ID_1, 4) == 4
         assert remove_from_cart(storage, names, cart, ID_1, 4) == 0
@@ -431,7 +463,10 @@ class TestAdminChanges:
         storage = {}
         names = set()
 
-        assert admin.run_command(storage, names, "create Gibson SG Junior 89.99 12") is True
+        assert (
+            admin.run_command(storage, names, "create Gibson SG Junior 89.99 12")
+            is True
+        )
         output = capsys.readouterr().out
         created_id = int(output.strip())
         assert 0 < created_id < 2**63
@@ -445,7 +480,10 @@ class TestAdminChanges:
 
         assert admin.run_command(storage, names, f"read {ID_1}") is True
         assert "hammer" in capsys.readouterr().out
-        assert admin.run_command(storage, names, f"update {ID_1} Claw Hammer 12.34 5") is True
+        assert (
+            admin.run_command(storage, names, f"update {ID_1} Claw Hammer 12.34 5")
+            is True
+        )
         assert storage[ID_1][NAME_KEY] == "claw hammer"
         assert names == {"claw hammer"}
         capsys.readouterr()
@@ -462,7 +500,7 @@ class TestAdminChanges:
         """Bad prices surface as decimal.InvalidOperation, not ValueError."""
         with pytest.raises(InvalidOperation):
             admin.run_command({}, set(), "create x abc 5")
-            
+
     def test_main_reports_bad_arguments_and_keeps_running(
         self, monkeypatch, capsys
     ) -> None:
