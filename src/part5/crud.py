@@ -193,9 +193,9 @@ def update_product(
 
     if PRICE_KEY in fields:
         fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
-    
+
     if NAME_KEY in fields:
-        new_name = normalize_product_name(fields[NAME_KEY])    
+        new_name = normalize_product_name(fields[NAME_KEY])
 
         if not new_name:
             return print("product name must not be blank")
@@ -208,8 +208,6 @@ def update_product(
             product_names.add(new_name)
 
         fields[NAME_KEY] = new_name
-
-   
 
     old_product.update(fields)
 
