@@ -38,20 +38,20 @@ are shared by every store.
 from collections.abc import Callable
 from typing import Any, Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import Registry, collect_stats
+from .snowflake import get_snowflake_id_generator
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import normalize_price, normalize_product_name
 
 
 STATS_REGISTRY: Final[Registry] = {}
 
-# TODO: задайте ключи операций в реестре, см. TASK.md
-CREATE_KEY: Final[str] = ""
-READ_KEY: Final[str] = ""
-UPDATE_KEY: Final[str] = ""
-DELETE_KEY: Final[str] = ""
+CREATE_KEY: Final[str] = "create"
+READ_KEY: Final[str] = "read"
+UPDATE_KEY: Final[str] = "update"
+DELETE_KEY: Final[str] = "delete"
 
-# TODO: при необходимости заведите здесь общий генератор Snowflake-идентификаторов
-# для generate_snowflake_id (см. TASK.md)
+_snowflake_generator: Final = get_snowflake_id_generator()
 
 
 def generate_snowflake_id() -> int | None:
@@ -65,11 +65,62 @@ def generate_snowflake_id() -> int | None:
         :func:`~src.part5.snowflake.get_snowflake_id_generator` for the
         cases.
     """
-    # TODO: реализуйте функцию
-    return 0
+    if _snowflake_generator is None:
+        return None
+
+    return _snowflake_generator()
 
 
-# TODO: оберните операцию декоратором collect_stats
+def find_product(storage: dict[int, Product], product_id: int) -> Product | None:
+    """Look up ``product_id`` in ``storage`` without touching the statistics.
+
+    Shared by the CRUD operations and the cart so that an internal lookup is
+    never counted as a call of :func:`read_product`.
+
+    Args:
+        storage: The product store to search.
+        product_id: The identifier to look up.
+
+    Returns:
+        The matching product record, or ``None`` when no product carries
+        that identifier (a message is printed in that case).
+    """
+    product = storage.get(product_id)
+
+    if product is None:
+        print(f"no product with id {product_id}")
+        return None
+
+    return product
+
+
+def is_name_acceptable(
+    name: str, product_names: set[str], current_name: str | None = None
+) -> bool:
+    """Check a normalised product name, printing a message if it is rejected.
+
+    Args:
+        name: The normalised name to check.
+        product_names: The normalised names already in the store.
+        current_name: The product's own current name when it is being
+            renamed; keeping it is allowed.
+
+    Returns:
+        ``True`` when the name is not blank and not taken by another
+        product, otherwise ``False``.
+    """
+    if not name:
+        print("product name must not be blank")
+        return False
+
+    if name != current_name and name in product_names:
+        print(f"product name '{name}' is already taken")
+        return False
+
+    return True
+
+
+@collect_stats(CREATE_KEY, STATS_REGISTRY)
 def create_product(
     storage: dict[int, Product],
     product_names: set[str],
@@ -104,11 +155,26 @@ def create_product(
         ``product_names`` are left unchanged and an explanatory message is
         printed (for the last case, by ``generate_id`` itself).
     """
-    # TODO: реализуйте функцию
-    return 0
+    name = normalize_product_name(fields[NAME_KEY])
+
+    if not is_name_acceptable(name, product_names):
+        return None
+
+    product_id = generate_id()
+    if product_id is None:
+        return None
+
+    storage[product_id] = {
+        NAME_KEY: name,
+        PRICE_KEY: normalize_price(fields[PRICE_KEY]),
+        QUANTITY_KEY: fields[QUANTITY_KEY],
+    }
+    product_names.add(name)
+
+    return product_id
 
 
-# TODO: оберните операцию декоратором collect_stats
+@collect_stats(READ_KEY, STATS_REGISTRY)
 def read_product(storage: dict[int, Product], product_id: int) -> Product | None:
     """Return the product stored under ``product_id``.
 
@@ -120,11 +186,10 @@ def read_product(storage: dict[int, Product], product_id: int) -> Product | None
         The matching product record, or ``None`` when no product carries
         that identifier (a message is printed in that case).
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return {}
+    return find_product(storage, product_id)
 
 
-# TODO: оберните операцию декоратором collect_stats
+@collect_stats(UPDATE_KEY, STATS_REGISTRY)
 def update_product(
     storage: dict[int, Product],
     product_names: set[str],
@@ -162,11 +227,32 @@ def update_product(
         and an explanatory message is printed. Renaming a product to its
         own current name is allowed.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return {}
+    existing_product = find_product(storage, product_id)
+    if existing_product is None:
+        return None
+
+    if NAME_KEY in fields:
+        name = normalize_product_name(fields[NAME_KEY])
+
+        if not is_name_acceptable(name, product_names, existing_product[NAME_KEY]):
+            return None
+
+        fields[NAME_KEY] = name
+
+    if PRICE_KEY in fields:
+        fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
+
+    old_name = existing_product[NAME_KEY]
+    existing_product.update(fields)
+
+    if existing_product[NAME_KEY] != old_name:
+        product_names.discard(old_name)
+        product_names.add(existing_product[NAME_KEY])
+
+    return existing_product
 
 
-# TODO: оберните операцию декоратором collect_stats
+@collect_stats(DELETE_KEY, STATS_REGISTRY)
 def delete_product(
     storage: dict[int, Product],
     product_names: set[str],
@@ -187,5 +273,10 @@ def delete_product(
         product carried that identifier (``storage`` and ``product_names``
         are left unchanged and a message is printed).
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return 0
+    product = find_product(storage, product_id)
+    if product is None:
+        return None
+
+    product_names.discard(product[NAME_KEY])
+    del storage[product_id]
+    return product_id

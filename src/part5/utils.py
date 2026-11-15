@@ -21,23 +21,32 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
+
+CELL_PADDING: Final[int] = 1
+
+COLUMN_BORDER: Final[str] = "|"
+SEPARATOR_FILL: Final[str] = "-"
+
+PERCENT_STEP: Final = Decimal("0.01")
+PERCENT_FACTOR: Final[int] = 100
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -50,8 +59,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,11 +76,73 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return " ".join(name.split()).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def format_row(cells: list[str], widths: list[int]) -> str:
+    """Render one table row, padding each cell to its column width.
+
+    Args:
+        cells: The text of each cell, left to right.
+        widths: The width of each column, left to right.
+
+    Returns:
+        The row as ``| a | b | c | d |`` with every cell padded on the
+        right to its column width.
+    """
+    padded_cells = [cell.ljust(width) for cell, width in zip(cells, widths)]
+    padding = " " * CELL_PADDING
+    joiner = f"{padding}{COLUMN_BORDER}{padding}"
+    row = joiner.join(padded_cells)
+    return f"{COLUMN_BORDER}{padding}{row}{padding}{COLUMN_BORDER}"
+
+
+def format_table(headers: tuple[str, ...], rows: list[list[str]]) -> str:
+    """Render a header row, a dashed separator and ``rows`` as a text table.
+
+    Args:
+        headers: The column headers, left to right.
+        rows: The cell texts of each row; every row has one cell per header.
+
+    Returns:
+        A multi-line string without a trailing newline. Each column is as
+        wide as the longest value it carries, its header counted, so with
+        no rows only the header and separator rows are returned.
+    """
+    widths = [
+        max([len(header)] + [len(row[i]) for row in rows])
+        for i, header in enumerate(headers)
+    ]
+
+    dashes = [SEPARATOR_FILL * (width + 2 * CELL_PADDING) for width in widths]
+    separator = f"{COLUMN_BORDER}{COLUMN_BORDER.join(dashes)}{COLUMN_BORDER}"
+
+    lines = [format_row(list(headers), widths), separator]
+    lines.extend(format_row(row, widths) for row in rows)
+
+    return "\n".join(lines)
+
+
+def format_success_rate(success: int, fails: int) -> str:
+    """Format the share of successful calls as a percentage.
+
+    Args:
+        success: Number of successful calls.
+        fails: Number of failed calls.
+
+    Returns:
+        ``success / (success + fails)`` in percent with two fractional digits
+        and a ``%`` sign, halves rounded up; ``"0.00%"`` when there were no
+        calls at all.
+    """
+    total = success + fails
+    if total == 0:
+        return f"{Decimal(0):.2f}%"
+
+    rate = (Decimal(success) * PERCENT_FACTOR / total).quantize(
+        PERCENT_STEP, ROUND_HALF_UP
+    )
+    return f"{rate}%"
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
@@ -93,8 +163,17 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    rows = [
+        [
+            str(product_id),
+            record[NAME_KEY],
+            str(record[PRICE_KEY]),
+            str(record[QUANTITY_KEY]),
+        ]
+        for product_id, record in storage.items()
+    ]
+
+    return format_table(TABLE_HEADERS, rows)
 
 
 def get_stats_str_representation(registry: Registry) -> str:
@@ -116,5 +195,14 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    rows = [
+        [
+            command,
+            str(stats[SUCCESS_KEY]),
+            str(stats[FAILS_KEY]),
+            format_success_rate(stats[SUCCESS_KEY], stats[FAILS_KEY]),
+        ]
+        for command, stats in registry.items()
+    ]
+
+    return format_table(STATS_TABLE_HEADERS, rows)
