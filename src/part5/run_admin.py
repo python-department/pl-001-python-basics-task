@@ -36,16 +36,37 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import InvalidOperation
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .storage import Product
+from .crud import (
+    STATS_REGISTRY,
+    create_product,
+    delete_product,
+    generate_snowflake_id,
+    read_product,
+    update_product,
+)
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import get_stats_str_representation, get_storage_str_representation
 
 
 # TODO: задайте приглашение и текст справки (используйте своё решение части 4,
 # не забудьте добавить команду stats, см. TASK.md)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+  stats                                      print call statistics of the CRUD commands
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
@@ -55,7 +76,7 @@ def show_help() -> None:
     is: a heading, one line per command with a short description, and a
     note on how multi-word names are parsed.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
@@ -66,7 +87,8 @@ def print_result(result: object) -> None:
             operation already reported its own failure, so nothing is
             printed in that case.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
+    if result is not None:
+        print(result)
 
 
 def run_command(
@@ -93,8 +115,51 @@ def run_command(
         decimal.InvalidOperation: If the price argument of ``create`` or
             ``update`` does not parse as a decimal number.
     """
-    # TODO: реализуйте функцию
-    return False
+    words = line.split()
+
+    if not words:
+        return True
+
+    match words:
+        case ["help"]:
+            show_help()
+        case ["exit"]:
+            return False
+        case ["show"] | ["list"]:
+            print(get_storage_str_representation(storage))
+        case ["stats"]:
+            print(get_stats_str_representation(STATS_REGISTRY))
+        case ["create", *name_parts, price_input, quantity_input] if (
+            len(name_parts) > 0
+        ):
+            name = " ".join(name_parts)
+            price = Decimal(price_input)
+            quantity = int(quantity_input)
+
+            fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
+            print_result(
+                create_product(storage, product_names, fields, generate_snowflake_id)
+            )
+        case ["read", product_id_input]:
+            product_id = int(product_id_input)
+            print_result(read_product(storage, product_id))
+        case ["update", product_id_input, *name_parts, price_input, quantity_input] if (
+            len(name_parts) > 0
+        ):
+            product_id = int(product_id_input)
+            name = " ".join(name_parts)
+            price = Decimal(price_input)
+            quantity = int(quantity_input)
+
+            fields = {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity}
+            print_result(update_product(storage, product_names, product_id, fields))
+        case ["delete", product_id_input]:
+            product_id = int(product_id_input)
+            print_result(delete_product(storage, product_names, product_id))
+        case _:
+            print(f"{line!r} is not a command")
+
+    return True
 
 
 def main() -> None:

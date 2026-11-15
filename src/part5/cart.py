@@ -9,7 +9,8 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
+from .crud import read_product, update_product
+from .storage import QUANTITY_KEY, Product
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -47,8 +48,23 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return 0
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    left_product = product[QUANTITY_KEY]
+    if left_product < quantity:
+        print(
+            f"not enough stock for product {product_id}: {left_product} available, {quantity} requested"
+        )
+        return None
+
+    update_product(
+        storage, product_names, product_id, {QUANTITY_KEY: left_product - quantity}
+    )
+
+    cart[product_id] = cart.get(product_id, 0) + quantity
+    return cart[product_id]
 
 
 def remove_from_cart(
@@ -84,5 +100,31 @@ def remove_from_cart(
         (zero means the product was dropped from the cart), or ``None`` when
         the cart does not hold the product or holds too few units.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return 0
+    if product_id not in cart:
+        print(f"product {product_id} is not in the cart")
+        return None
+
+    in_cart = cart[product_id]
+    if in_cart < quantity:
+        print(
+            f"cart holds only {in_cart} unit(s) of product {product_id}, cannot remove {quantity}"
+        )
+        return None
+
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    update_product(
+        storage,
+        product_names,
+        product_id,
+        {QUANTITY_KEY: product[QUANTITY_KEY] + quantity},
+    )
+
+    cart[product_id] -= quantity
+    if cart[product_id] == 0:
+        del cart[product_id]
+        return 0
+
+    return cart[product_id]
