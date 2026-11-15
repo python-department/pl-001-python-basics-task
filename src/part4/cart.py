@@ -9,10 +9,8 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+from .crud import read_product
+from .storage import QUANTITY_KEY, Product
 
 
 def add_to_cart(
@@ -46,8 +44,23 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    # TODO: реализуйте функцию
-    return 0
+
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    if product[QUANTITY_KEY] < quantity:
+        print(
+            f"not enough stock for product {product_id}: "
+            f"{product[QUANTITY_KEY]} available, {quantity} requested"
+        )
+        return None
+
+    product[QUANTITY_KEY] -= quantity
+    new_cart_quantity = cart.get(product_id, 0) + quantity
+    if new_cart_quantity > 0:
+        cart[product_id] = new_cart_quantity
+    return new_cart_quantity
 
 
 def remove_from_cart(
@@ -83,5 +96,27 @@ def remove_from_cart(
         (zero means the product was dropped from the cart), or ``None`` when
         the cart does not hold the product or holds too few units.
     """
-    # TODO: реализуйте функцию
-    return 0
+
+    in_cart = cart.get(product_id)
+    if in_cart is None:
+        print(f"product {product_id} is not in the cart")
+        return None
+
+    if in_cart < quantity:
+        print(
+            f"cart holds only {in_cart} unit(s) of product "
+            f"{product_id}, cannot remove {quantity}"
+        )
+        return None
+
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+
+    product[QUANTITY_KEY] += quantity
+    new_cart_quantity = in_cart - quantity
+    if new_cart_quantity == 0:
+        del cart[product_id]
+    else:
+        cart[product_id] = new_cart_quantity
+    return new_cart_quantity
