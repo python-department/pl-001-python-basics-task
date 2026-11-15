@@ -31,5 +31,9 @@ TIMESTAMP_MS_MAX: Final[int] = 2**TIMESTAMP_BITS - 1
 NODE_ID_MAX: Final[int] = 2**NODE_ID_BITS - 1
 SEQUENCE_ID_MAX: Final[int] = 2**SEQUENCE_ID_BITS - 1
 
+# Bit offset of each field inside the identifier.
+NODE_ID_SHIFT: Final[int] = SEQUENCE_ID_BITS
+TIMESTAMP_SHIFT: Final[int] = NODE_ID_BITS + SEQUENCE_ID_BITS
+
 # Здесь можно добавить собственные вспомогательные константы
 # А можно и не добавлять!

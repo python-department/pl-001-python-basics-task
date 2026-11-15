@@ -39,16 +39,13 @@ from collections.abc import Callable
 from typing import Any, Final
 
 from .decorators import Registry, collect_stats
-from .storage import Product
 from .snowflake import get_snowflake_id_generator
-
 from .storage import (
     NAME_KEY,
     PRICE_KEY,
     QUANTITY_KEY,
     Product,
 )
-
 from .utils import normalize_price, normalize_product_name
 
 
@@ -241,7 +238,7 @@ def delete_product(
         product carried that identifier (``storage`` and ``product_names``
         are left unchanged and a message is printed).
     """
-    if storage.get(product_id) is None:
+    if product_id not in storage:
         print(f"no product with id {product_id}")
         return None
 

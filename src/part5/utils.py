@@ -21,11 +21,10 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Final, Any
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, Final
 
-from .decorators import Registry, SUCCESS_KEY, FAILS_KEY
-
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
 from .storage import (
     ID_KEY,
     NAME_KEY,
@@ -33,6 +32,7 @@ from .storage import (
     QUANTITY_KEY,
     Product,
 )
+
 
 PRICE_PRECISION: Final[int] = 2
 PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
@@ -176,17 +176,13 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
     return "\n".join(lines)
 
 
-# делать таблицу функциональным подходом - бред сивой кобылы.
-# Меня это задолбало, этот код мало того что нечитаем, так еще и нихера не понятен.
-# Мне без разницы, что мы не проходили классы, потому что херачить таблицу через функции - долбоебизм!
-# К тому же, критериях нет запрета на использование и создание классов!
 class StatsTable:
     HEADERS = STATS_TABLE_HEADERS
 
     def __init__(self) -> None:
-        self._rows = []
+        self._rows: list[tuple[str, str, str, str]] = []
 
-    def add(self, name, success: int = 0, fails: int = 0):
+    def add(self, name: str, success: int = 0, fails: int = 0) -> None:
         self._rows.append(
             (
                 str(name),
@@ -203,13 +199,13 @@ class StatsTable:
 
         widths = [len(header) for header in self.HEADERS]
         for row in self._rows:
-            widths = [max(len(header), widths[i]) for i, header in enumerate(row)]
+            widths = [max(len(cell), widths[i]) for i, cell in enumerate(row)]
 
         result += f"|{'|'.join([f' {header!s:<{widths[i]}} ' for i, header in enumerate(self.HEADERS)])}|\n"
         result += f"|{'|'.join([f'-{"-" * widths[i]}-' for i, _ in enumerate(self.HEADERS)])}|"
 
         for row in self._rows:
-            result += f"\n|{'|'.join(f' {value:<{widths[i]}} ' for i, value in enumerate(row))}|"
+            result += f"\n|{'|'.join(f' {cell:<{widths[i]}} ' for i, cell in enumerate(row))}|"
 
         return result
 
@@ -233,11 +229,9 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    # TODO: реализуйте функцию
-
     table = StatsTable()
 
-    for item in registry.items():
-        table.add(item[0], item[1][SUCCESS_KEY], item[1][FAILS_KEY])
+    for command_name, counters in registry.items():
+        table.add(command_name, counters[SUCCESS_KEY], counters[FAILS_KEY])
 
     return table.render()

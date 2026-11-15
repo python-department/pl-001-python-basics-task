@@ -9,7 +9,7 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product, QUANTITY_KEY
+from .storage import QUANTITY_KEY, Product
 
 
 def add_to_cart(

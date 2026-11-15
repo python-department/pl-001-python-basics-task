@@ -15,18 +15,19 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 """
 
 import time
-
 from collections.abc import Callable
 
 from .constants import (
     EPOCH_MS_DEFAULT,
-    NODE_ID_DEFAULT,
-    TIMESTAMP_BITS,
     NODE_ID_BITS,
-    SEQUENCE_ID_BITS,
+    NODE_ID_DEFAULT,
     NODE_ID_MAX,
+    NODE_ID_SHIFT,
+    SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
+    TIMESTAMP_BITS,
     TIMESTAMP_MS_MAX,
+    TIMESTAMP_SHIFT,
 )
 
 
@@ -125,41 +126,28 @@ def get_snowflake_id_generator(
         print(f"epoch_ms must not be in the future, got {epoch_ms}")
         return None
 
-    sequence_id = 0
-    epoch = epoch_ms
+    last_ms = -1
+    next_sequence_id = 0
 
     def generator() -> int | None:
-        nonlocal sequence_id, epoch
-        snowflake_id = 0
-        current_epoch = read_current_millis(epoch_ms)
+        nonlocal last_ms, next_sequence_id
+        current_ms = read_current_millis(epoch_ms)
 
-        if not (0 <= sequence_id <= SEQUENCE_ID_MAX):
-            print(
-                f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id + 1}"
-            )
+        if current_ms != last_ms:
+            last_ms = current_ms
+            next_sequence_id = 0
+        sequence_id = next_sequence_id
+        next_sequence_id += 1
+
+        if sequence_id > SEQUENCE_ID_MAX:
+            print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}")
             return None
-        if current_epoch > TIMESTAMP_MS_MAX:
-            print(f"timestamp {current_epoch} ms overflows {TIMESTAMP_MS_MAX} ms")
+        if current_ms > TIMESTAMP_MS_MAX:
+            print(f"timestamp {current_ms} ms overflows {TIMESTAMP_MS_MAX} ms")
             return None
 
-        if current_epoch == epoch:
-            snowflake_id = (
-                (0b0 << (TIMESTAMP_BITS + NODE_ID_BITS + SEQUENCE_ID_BITS))
-                | (current_epoch << (NODE_ID_BITS + SEQUENCE_ID_BITS))
-                | (node_id << (SEQUENCE_ID_BITS))
-                | (sequence_id)
-            )
-            sequence_id += 1
-        else:
-            sequence_id = 0
-            epoch = current_epoch
-            snowflake_id = (
-                (0b0 << (TIMESTAMP_BITS + NODE_ID_BITS + SEQUENCE_ID_BITS))
-                | (current_epoch << (NODE_ID_BITS + SEQUENCE_ID_BITS))
-                | (node_id << (SEQUENCE_ID_BITS))
-                | (sequence_id)
-            )
-
-        return snowflake_id
+        return (
+            (current_ms << TIMESTAMP_SHIFT) | (node_id << NODE_ID_SHIFT) | sequence_id
+        )
 
     return generator

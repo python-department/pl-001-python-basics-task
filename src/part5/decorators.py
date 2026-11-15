@@ -14,8 +14,8 @@ a falsy one such as ``0``, counts as a success.
 """
 
 from collections.abc import Callable
-from typing import Final
 from functools import wraps
+from typing import Final
 
 
 SUCCESS_KEY: Final[str] = "success"
@@ -54,15 +54,15 @@ def collect_stats[**P, R](
         docstring as the original (see :func:`functools.wraps`).
     """
 
-    def decorator(func):
+    def decorator(func: Callable[P, R | None]) -> Callable[P, R | None]:
         if key in registry:
-            print(f"stats key {repr(key)} is already registered")
+            print(f"stats key {key!r} is already registered")
             return func
 
         registry[key] = {SUCCESS_KEY: 0, FAILS_KEY: 0}
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
             result = func(*args, **kwargs)
             if result is None:
                 registry[key][FAILS_KEY] += 1
