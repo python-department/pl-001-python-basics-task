@@ -18,7 +18,6 @@ from collections.abc import Callable
 from typing import Final
 
 
-
 SUCCESS_KEY: Final[str] = "success"
 FAILS_KEY: Final[str] = "fails"
 

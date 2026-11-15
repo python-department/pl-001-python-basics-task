@@ -39,7 +39,6 @@ is left untouched and the loop keeps running; only ``exit`` stops it.
 from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .crud import (
     STATS_REGISTRY,
     create_product,
@@ -48,11 +47,11 @@ from .crud import (
     read_product,
     update_product,
 )
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import (
     get_stats_str_representation,
     get_storage_str_representation,
 )
-
 
 
 PROMPT: Final[str] = "> "
@@ -69,7 +68,7 @@ HELP_TEXT: Final[str] = (
     "\n"
     "For create and update the price and quantity are the last two words of the\n"
     "line; everything before them is the product name, so it may contain spaces\n"
-    "(for example \"Gibson SG Junior\") and needs no quoting."
+    '(for example "Gibson SG Junior") and needs no quoting.'
 )
 
 
@@ -78,8 +77,8 @@ def show_help() -> None:
 
 
 def print_result(result: object) -> None:
-   if result is not None:
-       print(result)
+    if result is not None:
+        print(result)
 
 
 def run_command(
