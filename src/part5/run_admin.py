@@ -12,6 +12,7 @@ from .crud import (
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import get_stats_str_representation, get_storage_str_representation
 
+
 PROMPT: Final = "> "
 
 HELP_TEXT: Final = """Available commands:

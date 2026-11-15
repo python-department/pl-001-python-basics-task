@@ -2,6 +2,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Final, ParamSpec, TypeVar
 
+
 SUCCESS_KEY: Final = "success"
 FAILS_KEY: Final = "fails"
 

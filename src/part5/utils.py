@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
@@ -19,7 +20,7 @@ def normalize_price(price: Decimal) -> Decimal:
     return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
-def _format_table(headers: tuple[str, ...], rows: list[tuple[str, ...]]) -> str:
+def _format_table(headers: tuple[str, ...], rows: Sequence[tuple[str, ...]]) -> str:
     widths = [
         max(len(header), *(len(row[i]) for row in rows))
         for i, header in enumerate(headers)

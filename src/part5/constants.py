@@ -1,5 +1,6 @@
 from typing import Final
 
+
 EPOCH_MS_DEFAULT: Final = 1288834974657
 NODE_ID_DEFAULT: Final = 1
 

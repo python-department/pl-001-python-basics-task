@@ -5,11 +5,18 @@ from .decorators import Registry, collect_stats
 from .snowflake import get_snowflake_id_generator
 from .storage import (
     NAME_KEY as NAME_KEY,
+)
+from .storage import (
     PRICE_KEY as PRICE_KEY,
+)
+from .storage import (
     QUANTITY_KEY as QUANTITY_KEY,
+)
+from .storage import (
     Product as Product,
 )
 from .utils import normalize_price, normalize_product_name
+
 
 CREATE_KEY: Final = "create"
 READ_KEY: Final = "read"

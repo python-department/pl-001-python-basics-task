@@ -1,5 +1,5 @@
-from collections.abc import Callable
 import time
+from collections.abc import Callable
 
 from .constants import (
     EPOCH_MS_DEFAULT,
