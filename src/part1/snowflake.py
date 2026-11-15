@@ -15,14 +15,13 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 
 import time
 
-from .constants import (  # noqa: F401
+from constants import (
     EPOCH_MS_DEFAULT,
     NODE_ID_BITS,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
     SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
-    TIMESTAMP_BITS,
     TIMESTAMP_MS_MAX,
 )
 
@@ -121,12 +120,14 @@ def generate_snowflake_id(
     if not (0 <= sequence_id <= SEQUENCE_ID_MAX):
         print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], you have {sequence_id}")
         return None
+
     time_ms = read_current_millis(epoch_ms)
-    if time_ms > TIMESTAMP_MS_MAX:
+    if not (0 <= time_ms <= TIMESTAMP_MS_MAX):
         print("Timestamp overflows")
         return None
+
     return (
         (time_ms << (NODE_ID_BITS + SEQUENCE_ID_BITS))
-        | (node_id << (SEQUENCE_ID_BITS))
+        | (node_id << SEQUENCE_ID_BITS)
         | sequence_id
     )

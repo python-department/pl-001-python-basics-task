@@ -29,6 +29,7 @@ TIMESTAMP_BITS: Final[int] = 41
 NODE_ID_BITS: Final[int] = 10
 SEQUENCE_ID_BITS: Final[int] = 12
 
+
 # Largest value each field can hold.
 TIMESTAMP_MS_MAX: Final[int] = (2**TIMESTAMP_BITS) - 1
 NODE_ID_MAX: Final[int] = (2**NODE_ID_BITS) - 1
