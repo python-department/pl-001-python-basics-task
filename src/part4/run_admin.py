@@ -28,22 +28,32 @@ prints a distinct "arguments are invalid" notice. Either way the store
 is left untouched and the loop keeps running; only ``exit`` stops it.
 """
 
-from decimal import Decimal, InvalidOperation  # noqa: F401
+from decimal import Decimal, InvalidOperation
 from typing import Final
 
-from .crud import (  # noqa: F401
+from .crud import (
     create_product,
     delete_product,
     read_product,
     update_product,
 )
-from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product  # noqa: F401
-from .utils import get_storage_str_representation  # noqa: F401
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
+from .utils import get_storage_str_representation
 
 
-# TODO: задайте приглашение и текст справки (используйте своё решение части 3)
-PROMPT: Final[str] = ""
-HELP_TEXT: Final[str] = ""
+PROMPT: Final[str] = "admin> "
+HELP_TEXT: Final[str] = """Available commands:
+  help                                       show this message
+  exit                                       leave the console
+  show                                       print the whole store as a table
+  create <name...> <price> <quantity>        add a product, print its new id
+  read <id>                                  print the product with that id
+  update <id> <name...> <price> <quantity>   overwrite that product's fields
+  delete <id>                                remove the product with that id
+
+For create and update the price and quantity are the last two words of the
+line; everything before them is the product name, so it may contain spaces
+(for example "Gibson SG Junior") and needs no quoting."""
 
 
 def show_help() -> None:
@@ -53,7 +63,7 @@ def show_help() -> None:
     is: a heading, one line per command with a short description, and a
     note on how multi-word names are parsed.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    print(HELP_TEXT)
 
 
 def print_result(result: object) -> None:
@@ -64,7 +74,8 @@ def print_result(result: object) -> None:
             operation already reported its own failure, so nothing is
             printed in that case.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 3)
+    if result is not None:
+        print(result)
 
 
 def run_command(
@@ -91,8 +102,35 @@ def run_command(
         decimal.InvalidOperation: If the price argument of ``create`` or
             ``update`` does not parse as a decimal number.
     """
-    # TODO: реализуйте функцию
-    return False
+    words = line.split()
+    match words:
+        case ["help"]:
+            show_help()
+        case ["exit"]:
+            return False
+        case ["show"]:
+            print(get_storage_str_representation(storage))
+        case ["create", *name, price, quantity] if name:
+            fields = {
+                NAME_KEY: " ".join(name),
+                PRICE_KEY: Decimal(price),
+                QUANTITY_KEY: int(quantity),
+            }
+            print_result(create_product(storage, product_names, fields))
+        case ["read", product_id]:
+            print_result(read_product(storage, product_id))
+        case ["update", product_id, *name, price, quantity] if name:
+            fields = {
+                NAME_KEY: " ".join(name),
+                PRICE_KEY: Decimal(price),
+                QUANTITY_KEY: int(quantity),
+            }
+            print_result(update_product(storage, product_names, product_id, fields))
+        case ["delete", product_id]:
+            print_result(delete_product(storage, product_names, product_id))
+        case _:
+            print(f"{line!r} is not a command")
+    return True
 
 
 def main() -> None:

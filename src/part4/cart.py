@@ -9,10 +9,8 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+from .crud import read_product, update_product
+from .storage import QUANTITY_KEY, Product
 
 
 def add_to_cart(
@@ -46,8 +44,21 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    # TODO: реализуйте функцию
-    return 0
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+    available = product[QUANTITY_KEY]
+    if available < quantity:
+        print(
+            f"not enough stock for product {product_id}: {available} available, "
+            f"{quantity} requested"
+        )
+        return None
+    update_product(
+        storage, product_names, product_id, {QUANTITY_KEY: available - quantity}
+    )
+    cart[product_id] = cart.get(product_id, 0) + quantity
+    return cart[product_id]
 
 
 def remove_from_cart(
@@ -83,5 +94,27 @@ def remove_from_cart(
         (zero means the product was dropped from the cart), or ``None`` when
         the cart does not hold the product or holds too few units.
     """
-    # TODO: реализуйте функцию
-    return 0
+    held = cart.get(product_id)
+    if held is None:
+        print(f"product {product_id} is not in the cart")
+        return None
+    if held < quantity:
+        print(
+            f"cart holds only {held} unit(s) of product {product_id}, cannot remove {quantity}"
+        )
+        return None
+    product = read_product(storage, product_id)
+    if product is None:
+        return None
+    update_product(
+        storage,
+        product_names,
+        product_id,
+        {QUANTITY_KEY: product[QUANTITY_KEY] + quantity},
+    )
+    remaining = held - quantity
+    if remaining:
+        cart[product_id] = remaining
+    else:
+        del cart[product_id]
+    return remaining
