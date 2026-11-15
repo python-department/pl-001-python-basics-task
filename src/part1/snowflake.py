@@ -15,7 +15,7 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 
 import time
 
-from constants import (
+from src.part1.constants import (
     EPOCH_MS_DEFAULT,
     NODE_ID_BITS,
     NODE_ID_DEFAULT,
