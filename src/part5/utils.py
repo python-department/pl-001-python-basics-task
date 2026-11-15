@@ -1,120 +1,194 @@
-"""Standalone helpers shared by the part5 storage and CRUD modules.
-
-Normalisation:
-
-* :func:`normalize_price` rounds a raw :class:`~decimal.Decimal` amount to
-  the fixed number of fractional digits (:data:`PRICE_PRECISION`) that
-  every stored price uses, keeping currency values free of binary
-  floating-point error.
-* :func:`normalize_product_name` strips surrounding whitespace from a
-  product name, collapses every internal run of whitespace to a single
-  space and lower-cases it, giving every stored name a single canonical
-  form.
-
-Presentation:
-
-* :func:`get_storage_str_representation` renders the whole store as a
-  text table meant to be printed to a terminal; each column is sized to
-  the longest value it holds in that particular call.
-* :func:`get_stats_str_representation` renders the call statistics gathered
-  by :func:`~src.part5.decorators.collect_stats` as a table of the same
-  look, with the success rate of every command as a percentage.
-"""
-
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
 from .storage import Product
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return Decimal(price).quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
-
-
-# TODO: при необходимости добавьте свои вспомогательные функции
+    rename = (" ".join(name.split())).lower()
+    return rename
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    storage_str = []
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    idsmaxlen = len(TABLE_HEADERS[0])
+    namemaxlen = len(TABLE_HEADERS[1])
+    pricemaxlen = len(TABLE_HEADERS[2])
+    quantitymaxlen = len(TABLE_HEADERS[3])
 
-    Args:
-        storage: The product store to render.
+    for product_id, product in storage.items():
+        p_id = str(product_id)
+        p_name = str(product["name"])
+        p_price = str(product["price"])
+        p_qty = str(product["quantity"])
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage``, in insertion order. When
-        ``storage`` is empty only the header and separator rows are
-        returned, sized to the header labels.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+        storage_str.append([p_id, p_name, p_price, p_qty])
+
+        idsmaxlen = max(idsmaxlen, len(p_id))
+        namemaxlen = max(namemaxlen, len(p_name))
+        pricemaxlen = max(pricemaxlen, len(p_price))
+        quantitymaxlen = max(quantitymaxlen, len(p_qty))
+
+    s = (
+        "|"
+        + " "
+        + "ID"
+        + (" " * (idsmaxlen - len("ID") + 1))
+        + "|"
+        + " "
+        + "name"
+        + (" " * (namemaxlen - len("name") + 1))
+        + "|"
+        + " "
+        + "price"
+        + (" " * (pricemaxlen - len("price") + 1))
+        + "|"
+        + " "
+        + "quantity"
+        + (" " * (quantitymaxlen - len("quantity") + 1))
+        + "|"
+    )
+
+    s_ = (
+        "|"
+        + ("-" * (idsmaxlen + 2))
+        + "|"
+        + ("-" * (namemaxlen + 2))
+        + "|"
+        + ("-" * (pricemaxlen + 2))
+        + "|"
+        + ("-" * (quantitymaxlen + 2))
+        + "|"
+    )
+
+    storage_ans = []
+    for item_str in storage_str:
+        item_ans = (
+            "|"
+            + " "
+            + item_str[0]
+            + (" " * (idsmaxlen - len(item_str[0]) + 1))
+            + "|"
+            + " "
+            + item_str[1]
+            + (" " * (namemaxlen - len(item_str[1]) + 1))
+            + "|"
+            + " "
+            + item_str[2]
+            + (" " * (pricemaxlen - len(item_str[2]) + 1))
+            + "|"
+            + " "
+            + item_str[3]
+            + (" " * (quantitymaxlen - len(item_str[3]) + 1))
+            + "|"
+        )
+        storage_ans.append(item_ans)
+
+    result = "\n".join([s, s_] + storage_ans)
+    return result
 
 
 def get_stats_str_representation(registry: Registry) -> str:
-    """Render the call statistics as a text table with data-sized columns.
+    command_str = []
 
-    The table has the columns named by :data:`STATS_TABLE_HEADERS` -- command
-    name, number of successful calls, number of failed calls and success
-    rate. It is laid out like the one from
-    :func:`get_storage_str_representation`: every column is as wide as the
-    longest value it carries, its header counted.
+    command_max_len = len(STATS_TABLE_HEADERS[0])
+    success_max_len = len(STATS_TABLE_HEADERS[1])
+    fails_max_len = len(STATS_TABLE_HEADERS[2])
+    rate_max_len = len(STATS_TABLE_HEADERS[3])
 
-    Args:
-        registry: The statistics to render, a mapping of command name to the
-            counters kept by :func:`~src.part5.decorators.collect_stats`.
+    for command_name, stats in registry.items():
+        command = str(command_name)
+        success = str(stats[SUCCESS_KEY])
+        fails = str(stats[FAILS_KEY])
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then one
-        row per registry entry in insertion order. When ``registry`` is
-        empty only the header and separator rows are returned, sized to the
-        header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+        command_str.append([command, success, fails])
+
+        command_max_len = max(command_max_len, len(command))
+        success_max_len = max(success_max_len, len(success))
+        fails_max_len = max(fails_max_len, len(fails))
+
+    first_str = (
+        "|"
+        + " "
+        + "command name"
+        + (" " * (command_max_len - len(STATS_TABLE_HEADERS[0]) + 1))
+        + "|"
+        + " "
+        + "success"
+        + (" " * (success_max_len - len(STATS_TABLE_HEADERS[1]) + 1))
+        + "|"
+        + " "
+        + "fails"
+        + (" " * (fails_max_len - len(STATS_TABLE_HEADERS[2]) + 1))
+        + "|"
+        + " "
+        + "success rate"
+        + (" " * (rate_max_len - len(STATS_TABLE_HEADERS[3]) + 1))
+        + "|"
+    )
+    second_str = (
+        "|"
+        + ("-" * (command_max_len + 2))
+        + "|"
+        + ("-" * (success_max_len + 2))
+        + "|"
+        + ("-" * (fails_max_len + 2))
+        + "|"
+        + ("-" * (rate_max_len + 2))
+        + "|"
+    )
+    command_ans = []
+    for item_str in command_str:
+        if int(item_str[1]) + int(item_str[2]) == 0:
+            rate_str = "0.00%"
+        else:
+            rate_str = (
+                str(
+                    normalize_price(
+                        (int(item_str[1]) / (int(item_str[1]) + int(item_str[2]))) * 100
+                    )
+                )
+                + "%"
+            )
+        item_ans = (
+            "|"
+            + " "
+            + item_str[0]
+            + (" " * (command_max_len - len(item_str[0]) + 1))
+            + "|"
+            + " "
+            + item_str[1]
+            + (" " * (success_max_len - len(item_str[1]) + 1))
+            + "|"
+            + " "
+            + item_str[2]
+            + (" " * (fails_max_len - len(item_str[2]) + 1))
+            + "|"
+            + " "
+            + rate_str
+            + (" " * (rate_max_len - len(rate_str) + 1))
+            + "|"
+        )
+        command_ans.append(item_ans)
+
+    result = "\n".join([first_str, second_str] + command_ans)
+    return result
