@@ -19,10 +19,10 @@ from collections.abc import Callable
 
 from .constants import (
     EPOCH_MS_DEFAULT,
+    NANOSECONDS_PER_MILLISECOND,
     NODE_ID_DEFAULT,
     NODE_ID_MASK,
     NODE_ID_MAX,
-    NANOSECONDS_PER_MILLISECOND,
     NODE_ID_SHIFT,
     SEQUENCE_ID_MASK,
     SEQUENCE_ID_MAX,
