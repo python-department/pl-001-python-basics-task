@@ -14,6 +14,7 @@ changing a width keeps everything else consistent.
 
 from typing import Final
 
+
 # части 1).
 
 # Twitter's original Snowflake epoch: 2010-11-04 01:42:54.657 UTC.

@@ -39,9 +39,10 @@ from collections.abc import Callable
 from typing import Any, Final
 
 from .decorators import Registry, collect_stats
+from .snowflake import get_snowflake_id_generator
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 from .utils import normalize_price, normalize_product_name
-from .snowflake import get_snowflake_id_generator
+
 
 STATS_REGISTRY: Final[Registry] = {}
 
@@ -51,6 +52,7 @@ UPDATE_KEY: Final[str] = "update"
 DELETE_KEY: Final[str] = "delete"
 
 snowflake_id_generator = get_snowflake_id_generator()
+
 
 def generate_snowflake_id() -> int | None:
     """Issue the next product identifier from the shared Snowflake generator.
@@ -65,7 +67,7 @@ def generate_snowflake_id() -> int | None:
     """
     if snowflake_id_generator is None:
         return None
-    
+
     return snowflake_id_generator()
 
 
@@ -104,15 +106,15 @@ def create_product(
         ``product_names`` are left unchanged and an explanatory message is
         printed (for the last case, by ``generate_id`` itself).
     """
-    
+
     new_name = normalize_product_name(fields.get(NAME_KEY, ""))
-    
+
     if not new_name:
         return print("product name must not be blank")
-    
+
     if new_name in product_names:
         return print(f"product name '{new_name}' is already taken")
-    
+
     new_id = generate_id()
     if new_id is None:
         return None
@@ -122,9 +124,9 @@ def create_product(
         PRICE_KEY: new_price,
         QUANTITY_KEY: fields.get(QUANTITY_KEY, 0),
     }
-    
+
     product_names.add(new_name)
-    
+
     return new_id
 
 
@@ -140,10 +142,10 @@ def read_product(storage: dict[int, Product], product_id: int) -> Product | None
         The matching product record, or ``None`` when no product carries
         that identifier (a message is printed in that case).
     """
-    
+
     if (product := storage.get(product_id)) is not None:
         return product
-    
+
     return print(f"no product with id {product_id}")
 
 
@@ -185,31 +187,31 @@ def update_product(
         and an explanatory message is printed. Renaming a product to its
         own current name is allowed.
     """
-    
+
     if (old_product := storage.get(product_id)) is None:
         return print(f"no product with id {product_id}")
-    
+
     if NAME_KEY in fields:
         new_name = fields.get(NAME_KEY, "")
         new_name = normalize_product_name(new_name)
-        
+
         if not new_name:
             return print("product name must not be blank")
-        
+
         if new_name != old_product[NAME_KEY] and new_name in product_names:
             return print(f"product name '{new_name}' is already taken")
-        
+
         if new_name != old_product[NAME_KEY]:
             product_names.remove(old_product[NAME_KEY])
             product_names.add(new_name)
 
         fields[NAME_KEY] = new_name
-    
+
     if PRICE_KEY in fields:
         fields[PRICE_KEY] = normalize_price(fields[PRICE_KEY])
-    
+
     old_product.update(fields)
-    
+
     return old_product
 
 

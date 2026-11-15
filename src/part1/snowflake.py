@@ -23,7 +23,6 @@ from .constants import (
     SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
     TIMESTAMP_MS_MAX,
-    
 )
 
 

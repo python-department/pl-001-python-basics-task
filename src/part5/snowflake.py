@@ -14,20 +14,18 @@ Each packed field can be read back on its own with :func:`decode_timestamp_ms`,
 :func:`decode_node_id` and :func:`decode_sequence_id`.
 """
 
-from collections.abc import Callable
-
 import time
+from collections.abc import Callable
 
 from .constants import (
     EPOCH_MS_DEFAULT,
+    MS_PER_SEC,
     NODE_ID_BITS,
     NODE_ID_DEFAULT,
     NODE_ID_MAX,
     SEQUENCE_ID_BITS,
     SEQUENCE_ID_MAX,
     TIMESTAMP_MS_MAX,
-    MS_PER_SEC,
-    
 )
 
 
@@ -41,7 +39,7 @@ def read_current_millis(epoch_ms: int) -> int:
         The count of whole milliseconds between ``epoch_ms`` and now. Negative
         if ``epoch_ms`` lies in the future.
     """
-    
+
     current_time_ms = int(time.time() * MS_PER_SEC)
     timestamp_ms = current_time_ms - epoch_ms
     return timestamp_ms
@@ -75,7 +73,7 @@ def decode_node_id(snowflake_id: int) -> int:
         The node identifier packed into ``snowflake_id``, in the range
         ``[0, NODE_ID_MAX]``.
     """
-    
+
     node_id = (snowflake_id & (NODE_ID_MAX << SEQUENCE_ID_BITS)) >> SEQUENCE_ID_BITS
     return node_id
 
@@ -124,7 +122,7 @@ def get_snowflake_id_generator(
         to stdout, if ``node_id`` is outside ``[0, NODE_ID_MAX]`` or
         ``epoch_ms`` lies in the future.
     """
-    if not(0 <= node_id <= NODE_ID_MAX):
+    if not (0 <= node_id <= NODE_ID_MAX):
         return print(f"node_id must be in [0, {NODE_ID_MAX}], got {node_id}")
 
     if read_current_millis(epoch_ms) < 0:
@@ -146,17 +144,18 @@ def get_snowflake_id_generator(
             sequence_id += 1
 
         if sequence_id > SEQUENCE_ID_MAX:
-            return print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}")
+            return print(
+                f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}"
+            )
 
         last_timestamp = timestamp_ms
 
         snowflake_id = (
             (timestamp_ms << (SEQUENCE_ID_BITS + NODE_ID_BITS))
             + (node_id << SEQUENCE_ID_BITS)
-            + sequence_id)
+            + sequence_id
+        )
 
         return snowflake_id
-    
+
     return generate_snowflake_id
-
-
