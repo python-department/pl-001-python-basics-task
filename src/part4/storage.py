@@ -21,6 +21,7 @@ UUID string assigned by the create operation in :mod:`src.part4.crud`
 Field names are exposed as ``*_KEY`` constants so callers never hard-code
 the dictionary keys.
 
+
 Every caller that mutates the store also threads along a second
 structure, a ``set[str]`` of the normalised names currently in use --
 see, for example, the ``product_names`` parameter of
@@ -40,6 +41,6 @@ type Product = dict[str, Any]
 
 # Name of each field inside a Product record.
 # TODO: задайте имена полей записи
-NAME_KEY: Final = ""
-PRICE_KEY: Final = ""
-QUANTITY_KEY: Final = ""
+NAME_KEY: Final = "name"
+PRICE_KEY: Final = "price"
+QUANTITY_KEY: Final = "quantity"

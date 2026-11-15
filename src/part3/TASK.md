@@ -81,6 +81,7 @@ CRUD-операции над ним. Корзина (`cart.py`) в этой ча
 `"abc    def\tghi\tjkl" → "abc def ghi jkl"`, `" \t\n " → ""`,
 `"claw hammer" → "claw hammer"` (уже канонично — не меняется).
 
+
 ### `get_storage_str_representation(storage: list[Product]) -> str`
 
 Отрисовывает всё хранилище одной мультистрокой — выровненной таблицей,
