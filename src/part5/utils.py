@@ -5,6 +5,7 @@ from typing import Final
 from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
 from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
+
 PRICE_PRECISION: Final = 2
 PRICE_STEP: Final = Decimal("0.01")
 
@@ -36,9 +37,7 @@ def _format_table(headers: tuple[str, ...], rows: Sequence[tuple[str, ...]]) -> 
         return f"{header_line}\n{separator_line}"
 
     data_lines = [
-        "| "
-        + " | ".join(cell.ljust(widths[i]) for i, cell in enumerate(row))
-        + " |"
+        "| " + " | ".join(cell.ljust(widths[i]) for i, cell in enumerate(row)) + " |"
         for row in rows
     ]
     return "\n".join([header_line, separator_line, *data_lines])
