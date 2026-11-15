@@ -18,78 +18,75 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import Product
+from .storage import (
+    NAME_INDEX,
+    PRICE_INDEX,
+    PRODUCT_ID_INDEX,
+    QUANTITY_INDEX,
+    Product,
+)
 
 
-# Number of fractional digits every stored price is rounded to.
-# Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
-# Column headers of the table produced by get_storage_str_representation,
-# left to right. The width of each column is not fixed here -- it is
-# measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    return " ".join(name.split()).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def number_length(value: Decimal | float) -> int:
+    return len(str(value))
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    coloumns_lengths_sets: list[set[int]] = [set(), set(), set(), set()]
+    coloumns_lengths_numbers: list[int] = [0, 0, 0, 0]
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    for index in range(len(TABLE_HEADERS)):
+        coloumns_lengths_sets[index].add(len(TABLE_HEADERS[index]))
 
-    Args:
-        storage: The product store to render.
+    if storage:
+        for product in storage:
+            coloumns_lengths_sets[PRODUCT_ID_INDEX].add(
+                number_length(product[PRODUCT_ID_INDEX])
+            )
+            coloumns_lengths_sets[NAME_INDEX].add(len(product[NAME_INDEX]))
+            coloumns_lengths_sets[PRICE_INDEX].add(number_length(product[PRICE_INDEX]))
+            coloumns_lengths_sets[QUANTITY_INDEX].add(
+                number_length(product[QUANTITY_INDEX])
+            )
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage`` in list order. When ``storage``
-        is empty only the header and separator rows are returned, sized to
-        the header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    for coloumn_index in range(len(coloumns_lengths_numbers)):
+        coloumns_lengths_numbers[coloumn_index] = max(
+            coloumns_lengths_sets[coloumn_index]
+        )
+
+    header_parts = [
+        TABLE_HEADERS[index].ljust(coloumns_lengths_numbers[index])
+        for index in range(len(TABLE_HEADERS))
+    ]
+    header_line = f"| {' | '.join(header_parts)} |"
+
+    separating_parts = ["-" * (length + 2) for length in coloumns_lengths_numbers]
+    separating_line = f"|{'|'.join(separating_parts)}|"
+
+    table = [header_line, separating_line]
+
+    if not storage:
+        return "\n".join(table)
+
+    for product in storage:
+        line = f"| {' | '.join([str(product[index]).ljust(coloumns_lengths_numbers[index]) for index in range(len(product))])} |"
+        table.append(line)
+
+    return "\n".join(table)
