@@ -21,23 +21,29 @@ Presentation:
   look, with the success rate of every command as a percentage.
 """
 
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .decorators import Registry
-from .storage import Product
+from .decorators import FAILS_KEY, SUCCESS_KEY, Registry
+from .storage import NAME_KEY, PRICE_KEY, QUANTITY_KEY, Product
 
 
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final[Decimal] = Decimal(1).scaleb(-PRICE_PRECISION)
+PERCENT_MULTIPLIER: Final[int] = 100
+
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
 # TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -50,8 +56,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -68,8 +73,10 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    list_of_words = name.split()
+    name = " ".join(list_of_words)
+    name = name.lower()
+    return name
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -93,8 +100,34 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         ``storage`` is empty only the header and separator rows are
         returned, sized to the header labels.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    # TODO: реализуйте функцию (используйте своё решение части 3)
+    rows: list[tuple[str, ...]] = []
+    for item_id, characteristics in storage.items():
+        name = characteristics[NAME_KEY]
+        price = characteristics[PRICE_KEY]
+        quantity = characteristics[QUANTITY_KEY]
+        rows.append((str(item_id), str(name), str(price), str(quantity)))
+    return make_table(TABLE_HEADERS, rows)
+
+
+def make_table(headers: tuple[str, ...], data: list[tuple[str, ...]]) -> str:
+    col_length = [len(h) for h in headers]
+    for row in data:
+        for index, element in enumerate(row):
+            col_length[index] = max(col_length[index], len(element))
+    string_headers = "|"
+    for header, length in zip(headers, col_length, strict=True):
+        string_headers = f"{string_headers} {header.ljust(length)} |"
+    separator = "|"
+    for length in col_length:
+        separator = f"{separator}{'-' * (length + 2)}|"
+    table = [string_headers, separator]
+    for row in data:
+        line = "|"
+        for cell, length_c in zip(row, col_length, strict=True):
+            line = f"{line} {cell.ljust(length_c)} |"
+        table.append(line)
+    return "\n".join(table)
 
 
 def get_stats_str_representation(registry: Registry) -> str:
@@ -117,4 +150,15 @@ def get_stats_str_representation(registry: Registry) -> str:
         header labels.
     """
     # TODO: реализуйте функцию
-    return ""
+    rows: list[tuple[str, ...]] = []
+    for command, command_stats in registry.items():
+        success = command_stats[SUCCESS_KEY]
+        fails = command_stats[FAILS_KEY]
+        total = success + fails
+
+        if total > 0:
+            percentage = (success / total) * PERCENT_MULTIPLIER
+        else:
+            percentage = 0
+        rows.append((command, str(success), str(fails), f"{percentage:.2f}%"))
+    return make_table(STATS_TABLE_HEADERS, rows)

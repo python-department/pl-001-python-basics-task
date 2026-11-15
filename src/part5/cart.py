@@ -9,7 +9,7 @@ Like the CRUD layer, the failure path never raises -- the operation prints
 an explanatory message to stdout and returns ``None``.
 """
 
-from .storage import Product
+from .storage import QUANTITY_KEY, Product
 
 
 # TODO: при необходимости добавьте свои вспомогательные функции
@@ -25,19 +25,18 @@ def add_to_cart(
     """Move ``quantity`` units of ``product_id`` from the store into ``cart``.
 
     The product is looked up in ``storage``. If it is missing, a message is
-    printed (by :func:`~src.part5.crud.read_product`) and nothing
-    changes. If the store holds fewer units than requested, an explanatory
-    message is printed and nothing changes. Otherwise the store record is
-    decremented by ``quantity`` and the cart gains ``quantity`` units of
-    ``product_id`` -- the product is added when the cart had none of it.
+    printed and nothing changes. If the store holds fewer units than
+    requested, an explanatory message is printed and nothing changes.
+    Otherwise the store record is decremented by ``quantity`` and the cart
+    gains ``quantity`` units of ``product_id`` -- the product is added when
+    the cart had none of it.
 
     Args:
         storage: The product store to draw stock from; modified in place on
             success.
-        product_names: The normalised names in ``storage``; threaded
-            through to :func:`~src.part5.crud.update_product`, which
-            keeps it in sync (a quantity-only update never renames a
-            product, so it is left unchanged here).
+        product_names: The normalised names in ``storage``; a
+            quantity-only change never renames a product, so it is left
+            unchanged here.
         cart: The cart to add the units to; modified in place on success.
         product_id: The identifier of the product to add.
         quantity: Number of units to move into the cart.
@@ -47,8 +46,23 @@ def add_to_cart(
         ``None`` when the product is unknown or the store cannot cover the
         request.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return 0
+    # TODO: реализуйте функцию
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    quantity_old = storage[product_id][QUANTITY_KEY]
+    if quantity_old < quantity:
+        print(
+            f"not enough stock for product {product_id}: {quantity_old} available, {quantity} requested"
+        )
+        return None
+    storage[product_id][QUANTITY_KEY] = quantity_old - quantity
+    if product_id in cart:
+        cart[product_id] += quantity
+    else:
+        cart[product_id] = quantity
+
+    return cart[product_id]
 
 
 def remove_from_cart(
@@ -62,7 +76,8 @@ def remove_from_cart(
 
     If the cart holds no units of ``product_id``, a message is printed and
     nothing changes. If it holds fewer units than requested, an explanatory
-    message is printed and nothing changes. Otherwise the cart loses
+    message is printed and nothing changes. If the product is missing from
+    ``storage``, a message is printed and nothing changes. Otherwise the cart loses
     ``quantity`` units of the product -- the product is dropped from the
     cart when its quantity reaches zero -- and the store record gains
     ``quantity`` units back.
@@ -70,10 +85,9 @@ def remove_from_cart(
     Args:
         storage: The product store to return stock to; modified in place on
             success.
-        product_names: The normalised names in ``storage``; threaded
-            through to :func:`~src.part5.crud.update_product`, which
-            keeps it in sync (a quantity-only update never renames a
-            product, so it is left unchanged here).
+        product_names: The normalised names in ``storage``; a
+            quantity-only change never renames a product, so it is left
+            unchanged here.
         cart: The cart to take the units from; modified in place on
             success.
         product_id: The identifier of the product to remove.
@@ -84,5 +98,22 @@ def remove_from_cart(
         (zero means the product was dropped from the cart), or ``None`` when
         the cart does not hold the product or holds too few units.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return 0
+    # TODO: реализуйте функцию
+    if product_id not in cart:
+        print(f"product {product_id} is not in the cart")
+        return None
+    if cart[product_id] < quantity:
+        print(
+            f"cart holds only {cart[product_id]} unit(s) of product {product_id}, "
+            f"cannot remove {quantity}"
+        )
+        return None
+    if product_id not in storage:
+        print(f"no product with id {product_id}")
+        return None
+    cart[product_id] -= quantity
+    storage[product_id][QUANTITY_KEY] += quantity
+    if cart[product_id] == 0:
+        del cart[product_id]
+        return 0
+    return cart[product_id]
