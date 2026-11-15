@@ -17,9 +17,9 @@ from collections.abc import Callable
 from typing import Final
 
 
-# TODO: задайте имена двух счётчиков, см. TASK.md
-SUCCESS_KEY: Final[str] = ""
-FAILS_KEY: Final[str] = ""
+
+SUCCESS_KEY: Final[str] = "success"
+FAILS_KEY: Final[str] = "fails"
 
 
 type Stats = dict[str, int]
@@ -53,5 +53,5 @@ def collect_stats[**P, R](
         ``None``. The decorated function has the same signature, name and
         docstring as the original (see :func:`functools.wraps`).
     """
-    # TODO: реализуйте декоратор
+    
     return lambda function: function
