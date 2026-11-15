@@ -37,16 +37,20 @@ jobs:
               repo: context.repo.repo,
             });
 
+            // The title matches the template, so the PR is waiting for a check
+            const labelsToAdd = ["unchecked"];
+
             const matchingLabel = labels.find((label) => label.name === groupNumber);
 
-            if (!matchingLabel) {
-              console.log(`No label named "${groupNumber}" found, skipping.`);
-              return;
+            if (matchingLabel) {
+              labelsToAdd.push(matchingLabel.name);
+            } else {
+              console.log(`No label named "${groupNumber}" found, adding only the unchecked label.`);
             }
 
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              labels: [matchingLabel.name],
+              labels: labelsToAdd,
             });
