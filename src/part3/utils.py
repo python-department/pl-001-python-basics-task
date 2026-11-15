@@ -18,24 +18,21 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import Product
+from .storage import NAME_INDEX, PRODUCT_ID_INDEX, Product
 
 
 # Number of fractional digits every stored price is rounded to.
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
-# TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -48,8 +45,7 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
@@ -66,11 +62,42 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию
-    return ""
+    words = name.split()
+
+    return " ".join(words).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def is_name_taken(
+    storage: list[Product], name: str, product_id: int | None = None
+) -> bool:
+    for product in storage:
+        if product[NAME_INDEX] == name and product[PRODUCT_ID_INDEX] != product_id:
+            print(f"product name '{name}' is already taken")
+            return True
+
+    return False
+
+
+def get_row_str(cells: list[str], widths: list[int]) -> str:
+    cells_with_spaces = []
+
+    for cell, width in zip(cells, widths):
+        cells_with_spaces.append(cell.ljust(width))
+
+    middle = " | ".join(cells_with_spaces)
+
+    return f"| {middle} |"
+
+
+def get_separator_str(widths: list[int]) -> str:
+    dashes = []
+
+    for width in widths:
+        dashes.append("-" * (width + 2))
+
+    middle = "|".join(dashes)
+
+    return f"|{middle}|"
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
@@ -91,5 +118,19 @@ def get_storage_str_representation(storage: list[Product]) -> str:
         is empty only the header and separator rows are returned, sized to
         the header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    table = [list(TABLE_HEADERS)]
+
+    for product in storage:
+        table.append([str(field) for field in product])
+
+    widths = []
+
+    for column in range(len(TABLE_HEADERS)):
+        widths.append(max(len(values[column]) for values in table))
+
+    lines = [get_row_str(table[0], widths), get_separator_str(widths)]
+
+    for values in table[1:]:
+        lines.append(get_row_str(values, widths))
+
+    return "\n".join(lines)
