@@ -19,20 +19,22 @@ from typing import Final
 # Все константы, зависящие от ёмкостей *_BITS, должны вычисляться из них.
 
 # Twitter's original Snowflake epoch: 2010-11-04 01:42:54.657 UTC.
-EPOCH_MS_DEFAULT: Final[int] = 0
+EPOCH_MS_DEFAULT: Final[int] = 1288834974657
 
 # Node identifier used when the caller does not supply one.
-NODE_ID_DEFAULT: Final[int] = 0
+NODE_ID_DEFAULT: Final[int] = 1
 
 # Width of each field, in bits.
-TIMESTAMP_BITS: Final[int] = 0
-NODE_ID_BITS: Final[int] = 0
-SEQUENCE_ID_BITS: Final[int] = 0
+TIMESTAMP_BITS: Final[int] = 41
+NODE_ID_BITS: Final[int] = 10
+SEQUENCE_ID_BITS: Final[int] = 12
 
 # Largest value each field can hold.
-TIMESTAMP_MS_MAX: Final[int] = 0
-NODE_ID_MAX: Final[int] = 0
-SEQUENCE_ID_MAX: Final[int] = 0
+TIMESTAMP_MS_MAX: Final[int] = (1 << TIMESTAMP_BITS) - 1
+NODE_ID_MAX: Final[int] = (1 << NODE_ID_BITS) - 1
+SEQUENCE_ID_MAX: Final[int] = (1 << SEQUENCE_ID_BITS) - 1
 
 # Здесь можно добавить собственные вспомогательные константы
 # (например, сдвиги полей при сборке идентификатора).
+NODE_ID_SHIFT = SEQUENCE_ID_BITS
+TIMESTAMP_SHIFT = NODE_ID_SHIFT + NODE_ID_BITS
