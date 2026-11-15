@@ -11,8 +11,8 @@ an explanatory message to stdout and returns ``None``.
 
 from typing import Final
 
-from .crud import read_product, update_product  # noqa: F401
-from .storage import (  # noqa: F401
+from .crud import read_product, update_product
+from .storage import (
     NAME_INDEX,
     PRICE_INDEX,
     QUANTITY_INDEX,
@@ -24,7 +24,7 @@ type CartLine = tuple[int, int]
 
 # TODO: задайте позиции полей внутри кортежа CartLine
 LINE_PRODUCT_ID_INDEX: Final = 0
-LINE_QUANTITY_INDEX: Final = 0
+LINE_QUANTITY_INDEX: Final = 1
 
 
 def add_to_cart(
@@ -53,8 +53,82 @@ def add_to_cart(
         The cart line for ``product_id`` after the addition, or ``None``
         when the product is unknown or the store cannot cover the request.
     """
-    # TODO: реализуйте функцию
-    return (0, 0)
+    product = read_product(storage, product_id)
+    if not product:
+        return None
+
+    if product[QUANTITY_INDEX] < quantity:
+        print(
+            f"not enough stock for product {product_id}: storage available, {product[QUANTITY_INDEX]} requested"
+        )
+
+        return None
+
+    update_product(
+        storage,
+        product_id,
+        (product[NAME_INDEX], product[PRICE_INDEX], product[QUANTITY_INDEX] - quantity),
+    )
+
+    for index_cart_line in range(len(cart)):
+        if cart[index_cart_line][LINE_PRODUCT_ID_INDEX] == product_id:
+            cart[index_cart_line] = (
+                product_id,
+                quantity + cart[index_cart_line][LINE_QUANTITY_INDEX],
+            )
+            return cart[index_cart_line]
+
+    cart.append((product_id, quantity))
+    return (product_id, quantity)
+
+
+def find_cart_line(cart: list[CartLine], product_id: int) -> CartLine | None:
+    """Find line of the product from cart
+
+    Find first entry in cart line with necassery product_id.
+
+    Args:
+        cart: user's shopping cart
+        product_id: The identifier of the product to find.
+
+    Returns:
+        cart_line if all correct
+        `None` if identifier of the product don't found
+    """
+    for cart_line in cart:
+        if cart_line[LINE_PRODUCT_ID_INDEX] == product_id:
+            return cart_line
+
+    print(f"product {product_id} is not in the cart")
+    return None
+
+
+def update_cart_line(
+    cart: list[CartLine], product_id: int, quantity: int
+) -> CartLine | None:
+    """Update line of the product in the cart
+
+    If quantity = 0 line in the cart is remove. Else his quantity update.
+
+    Args:
+        cart: user's shopping cart
+        product_id: The identifier of the product to find.
+        quantity: New product quantity value
+
+    Returns:
+        cart_line if all correct
+        `None` if identifier of the product don't found
+    """
+    for index_cart_line in range(len(cart)):
+        if cart[index_cart_line][LINE_PRODUCT_ID_INDEX] == product_id:
+            if quantity == 0:
+                del cart[index_cart_line]
+            else:
+                cart[index_cart_line] = (product_id, quantity)
+            return (product_id, quantity)
+
+    print(f"product {product_id} is not in the cart")
+    return None
 
 
 def remove_from_cart(
@@ -85,5 +159,30 @@ def remove_from_cart(
         zero means the line was dropped), or ``None`` when the cart has no
         line for the product or holds too few units.
     """
-    # TODO: реализуйте функцию
-    return (0, 0)
+    cart_line = find_cart_line(cart, product_id)
+    if not cart_line:
+        return None
+
+    if cart_line[LINE_QUANTITY_INDEX] < quantity:
+        print(
+            f"cart holds only {cart_line[LINE_QUANTITY_INDEX]} unit(s) "
+            f"of product {product_id}, cannot remove {quantity}"
+        )
+
+        return None
+
+    product = read_product(storage, product_id)
+    if not product:
+        return None
+
+    update_product(
+        storage,
+        product_id,
+        (product[NAME_INDEX], product[PRICE_INDEX], product[QUANTITY_INDEX] + quantity),
+    )
+
+    new_cart_line = update_cart_line(
+        cart, product_id, cart_line[LINE_QUANTITY_INDEX] - quantity
+    )
+
+    return new_cart_line
