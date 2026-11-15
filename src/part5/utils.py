@@ -50,9 +50,7 @@ def normalize_product_name(name: str) -> str:
     return " ".join(name.split()).lower()
 
 
-def _render_table(
-    headers: Sequence[str], rows: Sequence[Sequence[str]]
-) -> str:
+def _render_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> str:
     """Render a plain text table with dashes, like in part 3."""
     widths = [len(header) for header in headers]
     for row in rows:

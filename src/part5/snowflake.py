@@ -73,16 +73,11 @@ def get_snowflake_id_generator(
             sequence_id = 0
 
         if sequence_id > SEQUENCE_ID_MAX:
-            print(
-                f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], "
-                f"got {sequence_id}"
-            )
+            print(f"sequence_id must be in [0, {SEQUENCE_ID_MAX}], got {sequence_id}")
             return None
 
         return (
-            (current_ms << TIMESTAMP_SHIFT)
-            | (node_id << NODE_ID_SHIFT)
-            | sequence_id
+            (current_ms << TIMESTAMP_SHIFT) | (node_id << NODE_ID_SHIFT) | sequence_id
         )
 
     return generate
