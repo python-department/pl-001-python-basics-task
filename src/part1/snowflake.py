@@ -73,7 +73,7 @@ def decode_node_id(snowflake_id: int) -> int:
     """
     # TODO: реализуйте функцию
 
-    return int((snowflake_id >> 12) & (2**NODE_ID_BITS - 1))
+    return int((snowflake_id >> SEQUENCE_ID_BITS) & (2**NODE_ID_BITS - 1))
 
 
 def decode_sequence_id(snowflake_id: int) -> int:
