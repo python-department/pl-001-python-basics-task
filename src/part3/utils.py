@@ -18,24 +18,24 @@ Presentation:
   the longest value it holds in that particular call.
 """
 
-from decimal import ROUND_HALF_UP, Decimal  # noqa: F401
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
-from .storage import Product
+from .storage import NAME_INDEX, PRICE_INDEX, PRODUCT_ID_INDEX, QUANTITY_INDEX, Product
 
 
 # Number of fractional digits every stored price is rounded to.
 # Quantisation step derived from PRICE_PRECISION, e.g. Decimal("0.01").
 # TODO: задайте число знаков после запятой и шаг квантования (используйте своё
 # решение части 2)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 # Column headers of the table produced by get_storage_str_representation,
 # left to right. The width of each column is not fixed here -- it is
 # measured per call from the data (see the function).
 # TODO: задайте заголовки столбцов таблицы
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
 
 
 def normalize_price(price: Decimal) -> Decimal:
@@ -48,8 +48,10 @@ def normalize_price(price: Decimal) -> Decimal:
         ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
         with halves rounded up.
     """
-    # TODO: реализуйте функцию (используйте своё решение части 2)
-    return Decimal(0)
+    ratio = price / PRICE_STEP
+    steps = ratio.quantize(Decimal("1."), rounding=ROUND_HALF_UP)
+    real_price = steps * PRICE_STEP
+    return real_price
 
 
 def normalize_product_name(name: str) -> str:
@@ -66,11 +68,49 @@ def normalize_product_name(name: str) -> str:
         The result is an empty string when ``name`` holds nothing but
         whitespace.
     """
-    # TODO: реализуйте функцию
-    return ""
+    pars_name = name.split()
+    norm_list = [norm_word.lower() for word in pars_name if (norm_word := word.strip())]
+    norm_name = " ".join(norm_list)
+    return norm_name
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def from_product_to_list(product: Product) -> list[str]:
+    return [
+        str(product[PRODUCT_ID_INDEX]),
+        str(product[NAME_INDEX]),
+        str(product[PRICE_INDEX]),
+        str(product[QUANTITY_INDEX]),
+    ]
+
+
+def calculate_of_wight(new_storage: list[list[str]]) -> list[int]:
+    wights = [len(words) for words in TABLE_HEADERS]
+
+    for products in new_storage:
+        for i, word in enumerate(products):
+            wights[i] = max(wights[i], len(word))
+    return wights
+
+
+def render_row(new_products: list[str], widths: list[int]) -> str:
+    parts = ["|"]
+
+    for i in range(len(new_products)):
+        element = new_products[i].ljust(widths[i])
+        parts.append(" " + element + " ")
+        parts.append("|")
+
+    return "".join(parts)
+
+
+def render_sep(widhts: list[int]) -> str:
+    parts = ["|"]
+
+    for wight in widhts:
+        parts.append("-" * (wight + 2))
+        parts.append("|")
+
+    return "".join(parts)
 
 
 def get_storage_str_representation(storage: list[Product]) -> str:
@@ -91,5 +131,18 @@ def get_storage_str_representation(storage: list[Product]) -> str:
         is empty only the header and separator rows are returned, sized to
         the header labels.
     """
-    # TODO: реализуйте функцию
-    return ""
+    new_storage = []
+    for product in storage:
+        new_storage.append(from_product_to_list(product))
+
+    wights = calculate_of_wight(new_storage)
+
+    lines = []
+
+    lines.append(render_row(list(TABLE_HEADERS), wights))
+    lines.append(render_sep(wights))
+
+    for elements in new_storage:
+        lines.append(render_row(elements, wights))
+
+    return "\n".join(lines)
