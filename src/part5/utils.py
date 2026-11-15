@@ -1,120 +1,132 @@
-"""Standalone helpers shared by the part5 storage and CRUD modules.
-
-Normalisation:
-
-* :func:`normalize_price` rounds a raw :class:`~decimal.Decimal` amount to
-  the fixed number of fractional digits (:data:`PRICE_PRECISION`) that
-  every stored price uses, keeping currency values free of binary
-  floating-point error.
-* :func:`normalize_product_name` strips surrounding whitespace from a
-  product name, collapses every internal run of whitespace to a single
-  space and lower-cases it, giving every stored name a single canonical
-  form.
-
-Presentation:
-
-* :func:`get_storage_str_representation` renders the whole store as a
-  text table meant to be printed to a terminal; each column is sized to
-  the longest value it holds in that particular call.
-* :func:`get_stats_str_representation` renders the call statistics gathered
-  by :func:`~src.part5.decorators.collect_stats` as a table of the same
-  look, with the success rate of every command as a percentage.
-"""
-
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Final
 
 from .decorators import Registry
-from .storage import Product
+from .storage import (
+    NAME_KEY,
+    PRICE_KEY,
+    QUANTITY_KEY,
+    Product,
+)
 
 
-# TODO: задайте число знаков после запятой и шаг квантования (используйте своё
-# решение части 4)
-PRICE_PRECISION: Final[int] = 0
-PRICE_STEP: Final = Decimal(0)
+PRICE_PRECISION: Final[int] = 2
+PRICE_STEP: Final = Decimal(1).scaleb(-PRICE_PRECISION)
 
 
-# TODO: задайте заголовки столбцов таблицы (используйте своё решение части 4)
-TABLE_HEADERS: Final[tuple[str, ...]] = ()
-# TODO: задайте заголовки столбцов таблицы статистики, см. TASK.md
-STATS_TABLE_HEADERS: Final[tuple[str, ...]] = ()
+TABLE_HEADERS: Final[tuple[str, ...]] = ("ID", "name", "price", "quantity")
+STATS_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "command name",
+    "success",
+    "fails",
+    "success rate",
+)
 
 
 def normalize_price(price: Decimal) -> Decimal:
-    """Round a price to the precision every stored record uses.
-
-    Args:
-        price: The raw price amount.
-
-    Returns:
-        ``price`` quantised to :data:`PRICE_PRECISION` fractional digits,
-        with halves rounded up.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return Decimal(0)
+    return price.quantize(PRICE_STEP, rounding=ROUND_HALF_UP)
 
 
 def normalize_product_name(name: str) -> str:
-    """Reduce a product name to the canonical form the store keeps.
-
-    Args:
-        name: The raw product name.
-
-    Returns:
-        ``name`` with every leading and trailing whitespace character
-        removed, every internal run of whitespace (spaces, tabs and the
-        like) collapsed to a single space, and the rest lower-cased. For
-        example ``"abc    def\tghi\tjkl"`` becomes ``"abc def ghi jkl"``.
-        The result is an empty string when ``name`` holds nothing but
-        whitespace.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    return " ".join(name.split()).lower()
 
 
-# TODO: при необходимости добавьте свои вспомогательные функции
+def _render_table(
+    headers: tuple[str, ...],
+    rows: list[tuple[str, ...]],
+) -> str:
+    columns_lengths_sets: list[set[int]] = [{len(header)} for header in headers]
+
+    for row in rows:
+        for index, cell in enumerate(row):
+            columns_lengths_sets[index].add(len(cell))
+
+    final_widths: list[int] = [max(length_set) for length_set in columns_lengths_sets]
+
+    header_parts = [
+        headers[index].ljust(final_widths[index]) for index in range(len(headers))
+    ]
+    header_line = f"| {' | '.join(header_parts)} |"
+
+    separating_parts = ["-" * (length + 2) for length in final_widths]
+    separating_line = f"|{'|'.join(separating_parts)}|"
+
+    table = [header_line, separating_line]
+
+    for row in rows:
+        row_parts = [
+            row[index].ljust(final_widths[index]) for index in range(len(headers))
+        ]
+        table.append(f"| {' | '.join(row_parts)} |")
+
+    return "\n".join(table)
+
+
+def number_length(value: Decimal | float) -> int:
+    return len(str(value))
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
-    """Render the product store as a text table with data-sized columns.
+    columns_lengths_sets: list[set[int]] = [set() for _ in range(4)]
 
-    The table has the columns named by :data:`TABLE_HEADERS` -- id, name,
-    price and quantity. Each column is made exactly as wide as the longest
-    value it carries in this call (its header counted), so the columns
-    line up when the string is printed to a terminal and no value is ever
-    truncated.
+    for index, header in enumerate(TABLE_HEADERS):
+        columns_lengths_sets[index].add(len(header))
 
-    Args:
-        storage: The product store to render.
+    if storage:
+        for product_id, product in storage.items():
+            columns_lengths_sets[0].add(number_length(product_id))
+            columns_lengths_sets[1].add(len(str(product[NAME_KEY])))
+            columns_lengths_sets[2].add(number_length(product[PRICE_KEY]))
+            columns_lengths_sets[3].add(number_length(product[QUANTITY_KEY]))
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then
-        one row per product in ``storage``, in insertion order. When
-        ``storage`` is empty only the header and separator rows are
-        returned, sized to the header labels.
-    """
-    # TODO: реализуйте функцию (используйте своё решение части 4)
-    return ""
+    final_widths: list[int] = [max(length_set) for length_set in columns_lengths_sets]
+
+    header_parts = [
+        TABLE_HEADERS[index].ljust(final_widths[index])
+        for index in range(len(TABLE_HEADERS))
+    ]
+    header_line = f"| {' | '.join(header_parts)} |"
+
+    separating_parts = ["-" * (length + 2) for length in final_widths]
+    separating_line = f"|{'|'.join(separating_parts)}|"
+
+    table = [header_line, separating_line]
+
+    if not storage:
+        return "\n".join(table)
+
+    for product_id, product in storage.items():
+        line = (
+            f"| {str(product_id).ljust(final_widths[0])} | "
+            f"{str(product[NAME_KEY]).ljust(final_widths[1])} | "
+            f"{str(product[PRICE_KEY]).ljust(final_widths[2])} | "
+            f"{str(product[QUANTITY_KEY]).ljust(final_widths[3])} |"
+        )
+        table.append(line)
+
+    return "\n".join(table)
 
 
 def get_stats_str_representation(registry: Registry) -> str:
-    """Render the call statistics as a text table with data-sized columns.
+    rows: list[tuple[str, ...]] = []
+    for command_name, counters in registry.items():
+        success_count = counters["success"]
+        fails_count = counters["fails"]
+        total_calls = success_count + fails_count
 
-    The table has the columns named by :data:`STATS_TABLE_HEADERS` -- command
-    name, number of successful calls, number of failed calls and success
-    rate. It is laid out like the one from
-    :func:`get_storage_str_representation`: every column is as wide as the
-    longest value it carries, its header counted.
+        if total_calls == 0:
+            rate_str = "0.00%"
+        else:
+            rate = (success_count / total_calls) * 100
+            rate_str = f"{rate:.2f}%"
 
-    Args:
-        registry: The statistics to render, a mapping of command name to the
-            counters kept by :func:`~src.part5.decorators.collect_stats`.
+        rows.append(
+            (
+                command_name,
+                str(success_count),
+                str(fails_count),
+                rate_str,
+            )
+        )
 
-    Returns:
-        A multi-line string: a header row, a dashed separator row, then one
-        row per registry entry in insertion order. When ``registry`` is
-        empty only the header and separator rows are returned, sized to the
-        header labels.
-    """
-    # TODO: реализуйте функцию
-    return ""
+    return _render_table(STATS_TABLE_HEADERS, rows)
