@@ -38,7 +38,6 @@ from typing import Any, Final
 
 type Product = dict[str, Any]
 
-# TODO: задайте имена полей записи (используйте своё решение части 4)
-NAME_KEY: Final = ""
-PRICE_KEY: Final = ""
-QUANTITY_KEY: Final = ""
+NAME_KEY: Final[str] = "name"
+PRICE_KEY: Final[str] = "price"
+QUANTITY_KEY: Final[str] = "quantity"
