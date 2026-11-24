@@ -123,18 +123,15 @@ def run_command(
     match command:
         case ["help"]:
             show_help()
-            return True
 
         case ["exit"]:
             return False
 
         case ["show"]:
             print(get_storage_str_representation(storage))
-            return True
 
         case ["stats"]:
             print(get_stats_str_representation(STATS_REGISTRY))
-            return True
 
         case ["create", *name_parts, str_price, str_quantity]:
             name = " ".join(name_parts)
@@ -147,13 +144,11 @@ def run_command(
                 generate_snowflake_id,
             )
             print_result(result)
-            return True
 
         case ["read", id]:
             product_id = int(id)
             result = read_product(storage, product_id)
             print_result(result)
-            return True
 
         case ["update", id, *name_parts, str_price, str_quantity]:
             product_id = int(id)
@@ -167,17 +162,16 @@ def run_command(
                 {NAME_KEY: name, PRICE_KEY: price, QUANTITY_KEY: quantity},
             )
             print_result(result)
-            return True
 
         case ["delete", id]:
             product_id = int(id)
             result = delete_product(storage, product_names, product_id)
             print_result(result)
-            return True
 
         case _:
             print(f"'{line}' is not a command")
-            return True
+
+    return True
 
 
 def main() -> None:

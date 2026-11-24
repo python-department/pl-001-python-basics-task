@@ -75,11 +75,40 @@ def normalize_product_name(name: str) -> str:
 
 def format_row(values: list[str] | tuple[str, ...], widths: list[int]) -> str:
     cells = [values[i].ljust(widths[i]) for i in range(len(widths))]
-    return "| " + " | ".join(cells) + " |"
+    return f"| {' | '.join(cells)} |"
 
 
 def separator(widths: list[int]) -> str:
-    return "|" + "|".join(["-" * (w + 2) for w in widths]) + "|"
+    return f"|{'|'.join(['-' * (w + 2) for w in widths])}|"
+
+
+def count_columns_widths(rows: list[list[str]], headers: tuple[str, ...]) -> list[int]:
+    widths: list[int] = [len(h) for h in headers]
+    for row in rows:
+        for i in range(len(row)):
+            widths[i] = max(widths[i], len(row[i]))
+    return widths
+
+
+def get_rows_with_success_rate(registry: Registry) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for name, value in registry.items():
+        if value[SUCCESS_KEY] + value[FAILS_KEY] == 0:
+            share = 0.0
+        else:
+            share = value[SUCCESS_KEY] / (value[SUCCESS_KEY] + value[FAILS_KEY]) * 100
+        rate = f"{share:.2f}%"
+        rows.append([name, str(value[SUCCESS_KEY]), str(value[FAILS_KEY]), rate])
+    return rows
+
+
+def get_lines(
+    rows: list[list[str]], widths: list[int], headers: tuple[str, ...]
+) -> list[str]:
+    lines = [format_row(headers, widths), separator(widths)]
+    for row in rows:
+        lines.append(format_row(row, widths))
+    return lines
 
 
 def get_storage_str_representation(storage: dict[int, Product]) -> str:
@@ -101,25 +130,20 @@ def get_storage_str_representation(storage: dict[int, Product]) -> str:
         returned, sized to the header labels.
     """
     rows: list[list[str]] = []
-    for ID, value in storage.items():
+    for id, value in storage.items():
         product: Product = value
         rows.append(
             [
-                str(ID),
+                str(id),
                 product[NAME_KEY],
                 str(product[PRICE_KEY]),
                 str(product[QUANTITY_KEY]),
             ]
         )
 
-    widths: list[int] = [len(h) for h in TABLE_HEADERS]
-    for row in rows:
-        for i in range(len(row)):
-            widths[i] = max(widths[i], len(row[i]))
+    widths: list[int] = count_columns_widths(rows, TABLE_HEADERS)
 
-    lines = [format_row(TABLE_HEADERS, widths), separator(widths)]
-    for row in rows:
-        lines.append(format_row(row, widths))
+    lines: list[str] = get_lines(rows, widths, TABLE_HEADERS)
 
     return "\n".join(lines)
 
@@ -143,22 +167,11 @@ def get_stats_str_representation(registry: Registry) -> str:
         empty only the header and separator rows are returned, sized to the
         header labels.
     """
-    rows: list[list[str]] = []
-    for name, value in registry.items():
-        if value[SUCCESS_KEY] + value[FAILS_KEY] == 0:
-            share = 0.0
-        else:
-            share = value[SUCCESS_KEY] / (value[SUCCESS_KEY] + value[FAILS_KEY]) * 100
-        rate = f"{share:.2f}%"
-        rows.append([name, str(value[SUCCESS_KEY]), str(value[FAILS_KEY]), rate])
 
-    widths: list[int] = [len(h) for h in STATS_TABLE_HEADERS]
-    for row in rows:
-        for i in range(len(row)):
-            widths[i] = max(widths[i], len(row[i]))
+    rows: list[list[str]] = get_rows_with_success_rate(registry)
 
-    lines = [format_row(STATS_TABLE_HEADERS, widths), separator(widths)]
-    for row in rows:
-        lines.append(format_row(row, widths))
+    widths: list[int] = count_columns_widths(rows, STATS_TABLE_HEADERS)
+
+    lines = get_lines(rows, widths, STATS_TABLE_HEADERS)
 
     return "\n".join(lines)
